@@ -1,0 +1,527 @@
+<!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface-container":"#171f33","inverse-on-surface":"#283044","on-tertiary-fixed":"#002113","on-tertiary-fixed-variant":"#005236","outline-variant":"#464554","surface":"#0b1326","primary-fixed-dim":"#c0c1ff","error-container":"#93000a","secondary":"#4cd7f6","primary":"#c0c1ff","surface-container-low":"#131b2e","on-tertiary":"#003824","on-tertiary-container":"#000703","on-error":"#690005","background":"#0b1326","on-background":"#dae2fd","secondary-container":"#03b5d3","on-primary-fixed":"#07006c","on-secondary-container":"#00424e","on-error-container":"#ffdad6","on-secondary-fixed":"#001f26","secondary-fixed":"#acedff","inverse-surface":"#dae2fd","tertiary-container":"#00885d","on-surface-variant":"#c7c4d7","tertiary-fixed":"#6ffbbe","tertiary":"#4edea3","surface-tint":"#c0c1ff","outline":"#908fa0","on-primary-fixed-variant":"#2f2ebe","on-secondary":"#003640","inverse-primary":"#494bd6","primary-fixed":"#e1e0ff","on-primary-container":"#0d0096","tertiary-fixed-dim":"#4edea3","surface-container-lowest":"#060e20","surface-dim":"#0b1326","on-primary":"#1000a9","on-secondary-fixed-variant":"#004e5c","primary-container":"#8083ff","error":"#ffb4ab","surface-container-high":"#222a3d","secondary-fixed-dim":"#4cd7f6","surface-container-highest":"#2d3449","on-surface":"#dae2fd","surface-variant":"#2d3449","surface-bright":"#31394d"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"gutter":"1rem","space-xl":"1.5rem","space-lg":"1rem","space-sm":"0.5rem","space-md":"0.75rem","margin":"1.5rem","space-xs":"0.25rem"},"fontFamily":{"headline-lg":["Inter"],"headline-xl":["Inter"],"body-sm":["Inter"],"body-md":["Inter"],"label-code-sm":["JetBrains Mono"],"headline-md":["Inter"],"body-lg":["Inter"],"headline-xl-mobile":["Inter"],"label-code-lg":["JetBrains Mono"],"label-code-md":["JetBrains Mono"]},"fontSize":{"headline-lg":["24px",{"lineHeight":"32px","letterSpacing":"-0.015em","fontWeight":"600"}],"headline-xl":["36px",{"lineHeight":"44px","letterSpacing":"-0.02em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"body-md":["13px",{"lineHeight":"18px","fontWeight":"400"}],"label-code-sm":["10px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-md":["18px",{"lineHeight":"26px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["15px",{"lineHeight":"22px","letterSpacing":"-0.005em","fontWeight":"400"}],"headline-xl-mobile":["28px",{"lineHeight":"36px","letterSpacing":"-0.02em","fontWeight":"600"}],"label-code-lg":["13px",{"lineHeight":"18px","fontWeight":"500"}],"label-code-md":["11px",{"lineHeight":"16px","letterSpacing":"0.02em","fontWeight":"500"}]}}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl z-50 flex items-center justify-between px-margin shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm"><img alt="HealOps Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1X-YWp0OYTApdnk52Oh-qZHatag3ECeZZr53MuHh0bWQo-gdPuQeiMl5-apcRyF45gedPfQv6fMvpfyuAGL0F7CRFUXT3LLNLg1Jm7WTsxwyOnA3-ay91aH4lSoCHi9PY_YqH-8UvvMsSchYzx-N-uHNN1K0Vi9tDOanfBs2ENXHAWrIW_A0lT5pkcuEuiTmk-yzXMfM6yPmIkTztCp27ZS4T_4R98MQ5gPXy3UYi1kVVFBTUIDz6n3cvw"><span class="font-headline-md text-headline-md font-bold tracking-tight text-on-surface">HealOps</span></div><div class="h-4 w-px bg-outline-variant/40 mx-space-xs"></div><div class="flex items-center gap-space-xs px-space-sm py-1 bg-surface-container rounded cursor-pointer hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-[16px] text-secondary">hub</span><span class="font-label-code-md text-label-code-md text-on-surface">prod-us-east-1 / k8s-task-cluster-04</span><span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span></div><span class="px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm bg-error-container/30 text-error">PRODUCTION</span><div class="hidden xl:flex items-center gap-2 px-space-sm py-1 rounded bg-tertiary-container/20 shadow-[0_0_8px_1px_rgba(78,222,163,0.15)]"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span></span><span class="font-label-code-md text-label-code-md text-tertiary font-medium">HealOps Agent: Active &amp; Watching</span></div></div><div class="flex items-center gap-space-md"><div class="relative flex items-center w-64 lg:w-80"><span class="material-symbols-outlined absolute left-2.5 text-[16px] text-outline">search</span><input class="w-full h-8 pl-8 pr-3 bg-surface-container-lowest text-on-surface placeholder:text-outline-variant font-label-code-sm text-label-code-sm rounded focus:outline-none focus:ring-1 focus:ring-primary-container transition-all" placeholder="Search tasks, incidents, traces, logs... ⌘K" type="text"></div><button class="relative p-1.5 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-error text-on-error font-label-code-sm text-[9px] font-bold">3</span></button><a class="p-1.5 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" href="#" title="Documentation &amp; API"><span class="material-symbols-outlined text-[20px]">description</span></a><div class="h-5 w-px bg-outline-variant/40"></div><div class="flex items-center gap-space-sm pl-space-xs"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-1 ring-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjAD7wTE9GvegzVGJpIkzgtl9QIbyImYowwmBmQ9Mo5ITKPrOpPfAJ_BToPdQ0r79Uhke13_7oRQuVliqc6YtpdfnQ1bMPJorCU_zc5zc0Cj0KhE_JZhw1Ha_QIO_oWDYzIHT2Gn1z-QVxcUxe61a717kyoNhg-FR0cKF73zj9pV4KlAaQ8USraqpd4K_8OY7o0nChhylkh5AeaDG7xxM_O50UyLyNSbpeMbFnutx1DEP0-BFOLIpc"><div class="hidden md:flex flex-col"><span class="font-body-sm text-body-sm font-medium text-on-surface leading-none">Alex Vance</span><span class="font-label-code-sm text-label-code-sm text-on-surface-variant leading-none mt-1">Lead SRE &amp; Platform Eng</span></div></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest z-40 flex flex-col justify-between shadow-[1px_0_12px_rgba(0,0,0,0.3)]"><div class="flex flex-col py-space-md"><div class="px-space-md pb-space-sm mb-space-xs"><span class="font-label-code-sm text-label-code-sm text-outline uppercase tracking-wider font-semibold">Autonomous Engine</span></div><nav class="flex flex-col gap-0.5 px-space-sm" data-active-classes="bg-primary-container text-on-primary font-bold shadow-[inset_3px_0_0_0_#c0c1ff]"><a class="flex items-center justify-between px-space-md py-2 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="dashboard" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">dashboard</span><span class="font-body-md text-body-md">Dashboard</span></div></a><a aria-current="page" class="flex items-center justify-between px-space-md py-2 rounded transition-all bg-primary-container text-on-primary font-bold shadow-[inset_3px_0_0_0_#c0c1ff]" data-path="tasks" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">check_box</span><span class="font-body-md text-body-md">Tasks</span></div></a><a class="flex items-center justify-between px-space-md py-2 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="test-results" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">science</span><span class="font-body-md text-body-md">Test Results</span></div></a><a class="flex items-center justify-between px-space-md py-2 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="incidents" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">warning</span><span class="font-body-md text-body-md">Incidents</span></div><span class="px-1.5 py-0.5 rounded font-label-code-sm text-label-code-sm bg-error-container text-on-error-container font-bold">2</span></a><a class="flex items-center justify-between px-space-md py-2 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="ai-analysis" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">psychology</span><span class="font-body-md text-body-md">AI Analysis</span></div><span class="px-1.5 py-0.5 rounded font-label-code-sm text-label-code-sm bg-secondary-container/20 text-secondary font-semibold">AI</span></a><a class="flex items-center justify-between px-space-md py-2 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="system-health" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">pulse_alert</span><span class="font-body-md text-body-md">System Health</span></div></a><a class="flex items-center justify-between px-space-md py-2 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="settings" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">settings</span><span class="font-body-md text-body-md">Settings</span></div></a></nav></div><div class="p-space-md m-space-sm bg-surface-container-low rounded flex flex-col gap-space-sm"><div class="flex items-center justify-between"><div class="flex items-center gap-1.5"><span class="inline-block w-2 h-2 rounded-full bg-tertiary"></span><span class="font-label-code-sm text-label-code-sm text-on-surface font-medium">24/24 Pods Healthy</span></div><span class="font-label-code-sm text-label-code-sm text-tertiary">100%</span></div><div class="flex items-center justify-between pt-1"><span class="font-label-code-sm text-label-code-sm text-on-surface-variant">SLA 30d</span><span class="font-label-code-sm text-label-code-sm text-secondary font-semibold">99.98% Uptime</span></div><div class="pt-2 mt-1 flex items-center justify-between"><span class="font-label-code-sm text-label-code-sm text-outline">v2.4.1-prod</span><span class="font-label-code-sm text-label-code-sm text-outline-variant">Autonomous</span></div></div></aside><div class="pl-64"><main class="relative w-full pt-16 bg-surface min-h-screen px-gutter py-space-lg"><div class="flex flex-col w-full">
+<!-- Subtle Ambient Glow Overlay (strictly relative & contained) -->
+<div class="relative w-full flex flex-col gap-space-lg">
+<div class="absolute -top-12 -left-12 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
+<div class="absolute top-48 right-10 w-80 h-80 bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
+<!-- Section Header & Top Actions -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md"><div class="flex flex-col"><div class="flex items-center gap-space-sm"><span class="font-label-code-sm text-label-code-sm text-primary uppercase font-semibold tracking-wider">Task Management Service</span><span class="inline-block w-1 h-1 rounded-full bg-outline-variant"></span><span class="px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-tertiary-container/30 text-tertiary flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">verified</span>Application Under Test • Live Mock Tasks</span></div><h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tight mt-0.5">Task Management</h1><p class="font-body-md text-body-md text-on-surface-variant">Core functional application managed and tested in real-time by HealOps automated test harness</p></div><div class="flex items-center gap-space-sm self-start lg:self-center"><button class="flex items-center gap-space-xs px-space-md py-1.5 rounded bg-surface-container text-on-surface hover:bg-surface-container-high transition-all shadow-sm" id="triggerQuickStatsBtn"><span class="material-symbols-outlined text-[18px] text-secondary">refresh</span><span class="font-label-code-md text-label-code-md">Reset Mock Data</span></button><button class="flex items-center gap-space-xs px-space-md py-1.5 rounded bg-primary-container text-on-primary font-medium hover:bg-primary-container/90 transition-all shadow-sm shadow-primary-container/20 active:scale-[0.98]" id="openModalBtn"><span class="material-symbols-outlined text-[18px]">add</span><span class="font-label-code-md text-label-code-md font-bold">Create New Task</span></button></div></div>
+<!-- Telemetry Snapshot Ribbon -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-sm"><div class="bg-surface-container-low p-space-md rounded flex flex-col justify-between shadow-sm"><div class="flex items-center justify-between"><span class="font-label-code-sm text-label-code-sm text-on-surface-variant uppercase">Total Tasks</span><span class="material-symbols-outlined text-[16px] text-primary">checklist</span></div><div class="flex items-baseline gap-2 mt-2"><span class="font-label-code-lg text-[22px] leading-none text-on-surface font-semibold">1,482</span><span class="font-label-code-sm text-label-code-sm text-outline">in backlog</span></div><div class="flex items-center gap-1 mt-2 text-outline font-label-code-sm text-label-code-sm"><span class="material-symbols-outlined text-[14px] text-tertiary">sync</span><span class="">Ready for execution</span></div></div><div class="bg-surface-container-low p-space-md rounded flex flex-col justify-between shadow-sm"><div class="flex items-center justify-between"><span class="font-label-code-sm text-label-code-sm text-on-surface-variant uppercase">In Progress</span><span class="material-symbols-outlined text-[16px] text-secondary">pending_actions</span></div><div class="flex items-baseline gap-2 mt-2"><span class="font-label-code-lg text-[22px] leading-none text-secondary font-semibold">28</span><span class="font-label-code-sm text-label-code-sm text-secondary-container">active</span></div><div class="flex items-center gap-1 mt-2 text-secondary font-label-code-sm text-label-code-sm"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span><span class="">Processing in app queue</span></div></div><div class="bg-surface-container-low p-space-md rounded flex flex-col justify-between shadow-sm"><div class="flex items-center justify-between"><span class="font-label-code-sm text-label-code-sm text-on-surface-variant uppercase">Completed</span><span class="material-symbols-outlined text-[16px] text-tertiary">task_alt</span></div><div class="flex items-baseline gap-2 mt-2"><span class="font-label-code-lg text-[22px] leading-none text-tertiary font-semibold">1,440</span><span class="font-label-code-sm text-label-code-sm text-outline">97.2% rate</span></div><div class="flex items-center gap-1 mt-2 text-tertiary font-label-code-sm text-label-code-sm"><span class="material-symbols-outlined text-[14px]">verified</span><span class="">Validated test pass</span></div></div><div class="bg-surface-container-low p-space-md rounded flex flex-col justify-between shadow-sm"><div class="flex items-center justify-between"><span class="font-label-code-sm text-label-code-sm text-on-surface-variant uppercase">Harness Assertion</span><span class="material-symbols-outlined text-[16px] text-tertiary">check_circle</span></div><div class="flex items-baseline gap-2 mt-2"><span class="font-label-code-lg text-[22px] leading-none text-tertiary font-semibold">100%</span><span class="font-label-code-sm text-label-code-sm text-outline">0 defects</span></div><div class="flex items-center gap-1 mt-2 text-tertiary font-label-code-sm text-label-code-sm"><span class="material-symbols-outlined text-[14px]">rule</span><span class="">All acceptance tests pass</span></div></div></div>
+<!-- Filter Bar & Search Utility -->
+<div class="bg-surface-container-low p-space-md rounded flex flex-col gap-space-md shadow-sm">
+<div class="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-space-md">
+<!-- Search Input -->
+<div class="relative flex-1 min-w-[280px]">
+<span class="material-symbols-outlined absolute left-3 top-2 text-[18px] text-outline">search</span>
+<input class="w-full h-9 pl-9 pr-8 bg-surface-container-lowest text-on-surface placeholder:text-outline font-label-code-sm text-label-code-sm rounded focus:outline-none focus:ring-1 focus:ring-secondary transition-all" id="taskSearchInput" placeholder="Search tasks by title, description, or assignee..." type="text">
+<button class="hidden absolute right-2.5 top-2 text-outline hover:text-on-surface" id="clearSearchBtn">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- Dropdown & View Controls -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<!-- Priority Filter -->
+<div class="relative">
+<select class="appearance-none h-9 pl-3 pr-8 bg-surface-container-lowest text-on-surface font-label-code-sm text-label-code-sm rounded focus:outline-none focus:ring-1 focus:ring-secondary cursor-pointer" id="priorityFilter">
+<option value="all">Priority: All Levels</option>
+<option value="critical">Critical</option>
+<option value="high">High</option>
+<option value="medium">Medium</option>
+<option value="low">Low</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-2.5 text-[16px] text-outline pointer-events-none">expand_more</span>
+</div>
+<!-- Service Filter -->
+<div class="relative">
+<select class="appearance-none h-9 pl-3 pr-8 bg-surface-container-lowest text-on-surface font-label-code-sm text-label-code-sm rounded focus:outline-none focus:ring-1 focus:ring-secondary cursor-pointer" id="serviceFilter">
+<option value="all">Service: All Microservices</option>
+<option value="backend-api">Backend-API</option>
+<option value="worker-pool">Worker-Pool</option>
+<option value="sync-engine">Sync-Engine</option>
+<option value="ingest-pipeline">Ingest-Pipeline</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-2.5 text-[16px] text-outline pointer-events-none">expand_more</span>
+</div>
+<!-- View Toggle Switcher -->
+<div class="flex items-center bg-surface-container-lowest p-0.5 rounded">
+<button class="flex items-center justify-center h-8 px-2.5 rounded bg-surface-container text-secondary font-label-code-sm text-label-code-sm transition-all shadow-sm" id="viewTableBtn" title="Table View">
+<span class="material-symbols-outlined text-[18px]">table_rows</span>
+<span class="hidden sm:inline ml-1">Table</span>
+</button>
+<button class="flex items-center justify-center h-8 px-2.5 rounded text-outline hover:text-on-surface font-label-code-sm text-label-code-sm transition-all" id="viewKanbanBtn" title="Kanban Board View">
+<span class="material-symbols-outlined text-[18px]">view_kanban</span>
+<span class="hidden sm:inline ml-1">Kanban</span>
+</button>
+</div>
+<!-- Refresh action -->
+<button class="flex items-center justify-center w-9 h-9 rounded bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-all" id="refreshTasksBtn" title="Refresh Live Queue">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+</button>
+</div>
+</div>
+<!-- Status Filter Tabs -->
+<div class="flex items-center gap-1 overflow-x-auto pb-0.5">
+<button class="status-tab active px-space-md py-1.5 rounded font-label-code-sm text-label-code-sm bg-surface-container text-on-surface font-semibold transition-all flex items-center gap-1.5 shadow-sm" data-status="all">
+<span class="">All</span>
+<span class="px-1.5 py-0.2 bg-surface-container-highest text-on-surface-variant rounded-full text-[10px]">1,482</span>
+</button>
+<button class="status-tab px-space-md py-1.5 rounded font-label-code-sm text-label-code-sm text-on-surface-variant hover:bg-surface-container/60 hover:text-on-surface transition-all flex items-center gap-1.5" data-status="pending">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-container"></span>
+<span class="">Pending</span>
+<span class="px-1.5 py-0.2 bg-surface-container text-secondary rounded-full text-[10px]">14</span>
+</button>
+<button class="status-tab px-space-md py-1.5 rounded font-label-code-sm text-label-code-sm text-on-surface-variant hover:bg-surface-container/60 hover:text-on-surface transition-all flex items-center gap-1.5" data-status="in-progress">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+<span class="">In Progress</span>
+<span class="px-1.5 py-0.2 bg-surface-container text-secondary rounded-full text-[10px]">28</span>
+</button>
+<button class="status-tab px-space-md py-1.5 rounded font-label-code-sm text-label-code-sm text-on-surface-variant hover:bg-surface-container/60 hover:text-on-surface transition-all flex items-center gap-1.5" data-status="completed">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span class="">Completed</span>
+<span class="px-1.5 py-0.2 bg-surface-container text-tertiary rounded-full text-[10px]">1,440</span>
+</button>
+<button class="status-tab px-space-md py-1.5 rounded font-label-code-sm text-label-code-sm text-on-surface-variant hover:bg-surface-container/60 hover:text-on-surface transition-all flex items-center gap-1.5" data-status="failed">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+<span class="">Failed</span>
+<span class="px-1.5 py-0.2 bg-error-container/40 text-error rounded-full text-[10px]">0</span>
+</button>
+</div>
+</div>
+<!-- Batch Selection Banner (Shows conditionally when tasks are checked) -->
+<div class="hidden items-center justify-between px-space-md py-2 bg-primary-container/20 rounded shadow-sm" id="batchActionBar">
+<div class="flex items-center gap-space-md">
+<span class="font-label-code-sm text-label-code-sm text-primary font-bold"><span id="selectedCount" class="">0</span> tasks selected</span>
+<div class="h-4 w-px bg-outline-variant/40"></div>
+<button class="font-label-code-sm text-label-code-sm text-on-surface hover:text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">replay</span> Rerun Selected
+        </button>
+<button class="font-label-code-sm text-label-code-sm text-on-surface hover:text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">pause_circle</span> Pause Selected
+        </button>
+<button class="font-label-code-sm text-label-code-sm text-error hover:text-error/80 flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">delete</span> Abort &amp; Remove
+        </button>
+</div>
+<button class="font-label-code-sm text-label-code-sm text-outline hover:text-on-surface" id="clearSelectionBtn">Deselect All</button>
+</div>
+<!-- MAIN DATA VIEW: High-Density Interactive Task Table -->
+<div class="bg-surface-container-low rounded overflow-hidden shadow-md flex flex-col" id="tableViewWrapper">
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-md text-body-md border-collapse min-w-[1100px]">
+<thead>
+<tr class="bg-surface-container-lowest text-on-surface-variant font-label-code-sm text-label-code-sm uppercase tracking-wider select-none"><th class="py-2.5 px-space-md w-10 text-center"><input class="w-3.5 h-3.5 rounded bg-surface-container text-primary focus:ring-0 cursor-pointer" id="selectAllCheckbox" type="checkbox"></th><th class="py-2.5 px-space-md min-w-[280px]">Task Title &amp; Description</th><th class="py-2.5 px-space-sm min-w-[110px]">Priority</th><th class="py-2.5 px-space-sm min-w-[120px]">Status</th><th class="py-2.5 px-space-sm min-w-[150px]">Assignee</th><th class="py-2.5 px-space-sm min-w-[130px]">Created</th><th class="py-2.5 px-space-md text-right min-w-[120px]">Actions</th></tr>
+</thead>
+<tbody class="divide-y divide-transparent" id="taskTableBody"><tr class="task-row group bg-surface-container-low hover:bg-surface-container/60 transition-colors" data-priority="critical" data-status="in-progress"><td class="py-2.5 px-space-md text-center"><input class="row-checkbox w-3.5 h-3.5 rounded bg-surface-container text-primary cursor-pointer" type="checkbox"></td><td class="py-2.5 px-space-md"><div class="flex flex-col"><div class="flex items-center gap-2"><span class="font-label-code-sm text-label-code-sm text-secondary font-bold">TASK-104</span><span class="font-body-md text-body-md font-medium text-on-surface group-hover:text-primary transition-colors cursor-pointer">Customer checkout order processing &amp; payment capture</span></div><p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Processes credit card authorizations, confirms inventory reservations, and emits receipt emails.</p></div></td><td class="py-2.5 px-space-sm"><span class="inline-flex items-center px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-error-container/40 text-error font-semibold">Critical</span></td><td class="py-2.5 px-space-sm"><span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-secondary/10 text-secondary"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>In Progress</span></td><td class="py-2.5 px-space-sm"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-on-surface-variant">person</span><span class="font-label-code-sm text-label-code-sm text-on-surface">Alex Vance</span></div></td><td class="py-2.5 px-space-sm"><div class="flex flex-col"><span class="font-label-code-sm text-label-code-sm text-on-surface">10 mins ago</span><span class="font-label-code-sm text-[10px] text-outline">Oct 24, 14:32</span></div></td><td class="py-2.5 px-space-md text-right"><div class="flex items-center justify-end gap-1"><button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-on-surface" title="Edit Task"><span class="material-symbols-outlined text-[16px]">edit</span></button><button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-secondary" title="Mark Completed"><span class="material-symbols-outlined text-[16px]">check_circle</span></button><button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-error" title="Delete Task"><span class="material-symbols-outlined text-[16px]">delete</span></button></div></td></tr><tr class="task-row group bg-surface-container-low hover:bg-surface-container/60 transition-colors" data-priority="high" data-status="completed"><td class="py-2.5 px-space-md text-center"><input class="row-checkbox w-3.5 h-3.5 rounded bg-surface-container text-primary cursor-pointer" type="checkbox"></td><td class="py-2.5 px-space-md"><div class="flex flex-col"><div class="flex items-center gap-2"><span class="font-label-code-sm text-label-code-sm text-outline">TASK-103</span><span class="font-body-md text-body-md font-medium text-on-surface group-hover:text-primary transition-colors cursor-pointer">Generate monthly financial analytics &amp; export invoice CSV</span></div><p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Aggregates ledger transactions across sub-accounts and compiles statement breakdown.</p></div></td><td class="py-2.5 px-space-sm"><span class="inline-flex items-center px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-secondary-container/20 text-secondary font-semibold">High</span></td><td class="py-2.5 px-space-sm"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-tertiary/10 text-tertiary"><span class="material-symbols-outlined text-[14px]">check</span>Completed</span></td><td class="py-2.5 px-space-sm"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-on-surface-variant">person</span><span class="font-label-code-sm text-label-code-sm text-on-surface">Maria Santos</span></div></td><td class="py-2.5 px-space-sm"><div class="flex flex-col"><span class="font-label-code-sm text-label-code-sm text-on-surface">25 mins ago</span><span class="font-label-code-sm text-[10px] text-outline">Oct 24, 14:17</span></div></td><td class="py-2.5 px-space-md text-right"><div class="flex items-center justify-end gap-1"><button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-on-surface" title="Edit Task"><span class="material-symbols-outlined text-[16px]">edit</span></button><button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-secondary" title="Rerun Task"><span class="material-symbols-outlined text-[16px]">replay</span></button><button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-error" title="Delete Task"><span class="material-symbols-outlined text-[16px]">delete</span></button></div></td></tr><tr class="task-row group bg-surface-container-low hover:bg-surface-container/60 transition-colors" data-priority="medium" data-status="pending"><td class="py-2.5 px-space-md text-center"><input class="row-checkbox w-3.5 h-3.5 rounded bg-surface-container text-primary cursor-pointer" type="checkbox"></td><td class="py-2.5 px-space-md"><div class="flex flex-col"><div class="flex items-center gap-2"><span class="font-label-code-sm text-label-code-sm text-outline">TASK-102</span><span class="font-body-md text-body-md font-medium text-on-surface group-hover:text-primary transition-colors cursor-pointer">Bulk sync user contact preferences &amp; notification digests</span></div><p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Batched sync for opted-in user records scheduled for automated dispatch.</p></div></td><td class="py-2.5 px-space-sm"><span class="inline-flex items-center px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container text-secondary font-semibold">Medium</span></td><td class="py-2.5 px-space-sm"><span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container-highest text-secondary-container"><span class="w-2 h-2 rounded-full bg-secondary-container"></span>Pending</span></td><td class="py-2.5 px-space-sm"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-on-surface-variant">schedule</span><span class="font-label-code-sm text-label-code-sm text-on-surface">Auto-scheduler</span></div></td><td class="py-2.5 px-space-sm"><div class="flex flex-col"><span class="font-label-code-sm text-label-code-sm text-on-surface">1 hour ago</span><span class="font-label-code-sm text-[10px] text-outline">Oct 24, 13:45</span></div></td><td class="py-2.5 px-space-md text-right"><div class="flex items-center justify-end gap-1"><button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-on-surface" title="Edit Task"><span class="material-symbols-outlined text-[16px]">edit</span></button><button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-tertiary" title="Start Task"><span class="material-symbols-outlined text-[16px]">play_arrow</span></button><button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-error" title="Delete Task"><span class="material-symbols-outlined text-[16px]">delete</span></button></div></td></tr><tr class="task-row group bg-surface-container-low hover:bg-surface-container/60 transition-colors" data-priority="low" data-status="completed"><td class="py-2.5 px-space-md text-center"><input class="row-checkbox w-3.5 h-3.5 rounded bg-surface-container text-primary cursor-pointer" type="checkbox"></td><td class="py-2.5 px-space-md"><div class="flex flex-col"><div class="flex items-center gap-2"><span class="font-label-code-sm text-label-code-sm text-outline">TASK-101</span><span class="font-body-md text-body-md font-medium text-on-surface group-hover:text-primary transition-colors cursor-pointer">Purge expired temporary upload files and draft attachments</span></div><p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Nightly storage housekeeping removing staged session files older than 24 hours.</p></div></td><td class="py-2.5 px-space-sm"><span class="inline-flex items-center px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container-highest text-outline font-medium">Low</span></td><td class="py-2.5 px-space-sm"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-tertiary/10 text-tertiary"><span class="material-symbols-outlined text-[14px]">check</span>Completed</span></td><td class="py-2.5 px-space-sm"><div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-on-surface-variant">schedule</span><span class="font-label-code-sm text-label-code-sm text-on-surface">System Cron</span></div></td><td class="py-2.5 px-space-sm"><div class="flex flex-col"><span class="font-label-code-sm text-label-code-sm text-on-surface">2 hours ago</span><span class="font-label-code-sm text-[10px] text-outline">Oct 24, 12:30</span></div></td><td class="py-2.5 px-space-md text-right"><div class="flex items-center justify-end gap-1"><button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-on-surface" title="Edit Task"><span class="material-symbols-outlined text-[16px]">edit</span></button><button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-secondary" title="Rerun Task"><span class="material-symbols-outlined text-[16px]">replay</span></button><button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-error" title="Delete Task"><span class="material-symbols-outlined text-[16px]">delete</span></button></div></td></tr></tbody>
+</table>
+</div>
+<!-- Pagination & Row Range Indicator -->
+<div class="bg-surface-container-lowest px-space-md py-3 flex flex-col sm:flex-row items-center justify-between gap-space-sm border-t-0">
+<div class="flex items-center gap-2">
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Showing <strong class="text-on-surface font-semibold">1-10</strong> of <strong class="text-on-surface font-semibold">1,482</strong> tasks</span>
+<div class="hidden md:flex items-center gap-1.5 ml-3">
+<span class="font-label-code-sm text-[10px] text-outline">Page Size:</span>
+<select class="bg-surface-container text-on-surface font-label-code-sm text-[10px] rounded px-1.5 py-0.5 focus:outline-none">
+<option>10</option>
+<option>25</option>
+<option>50</option>
+<option>100</option>
+</select>
+</div>
+</div>
+<!-- Navigation buttons -->
+<div class="flex items-center gap-1">
+<button class="px-2.5 py-1 rounded bg-surface-container text-outline hover:text-on-surface font-label-code-sm text-label-code-sm disabled:opacity-40 disabled:pointer-events-none" disabled="">
+            Previous
+          </button>
+<button class="w-7 h-7 rounded bg-primary-container text-on-primary font-label-code-sm text-label-code-sm font-bold flex items-center justify-center shadow-sm">
+            1
+          </button>
+<button class="w-7 h-7 rounded bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-label-code-sm text-label-code-sm flex items-center justify-center">
+            2
+          </button>
+<button class="w-7 h-7 rounded bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-label-code-sm text-label-code-sm flex items-center justify-center">
+            3
+          </button>
+<span class="text-outline font-label-code-sm text-label-code-sm px-1">...</span>
+<button class="w-8 h-7 rounded bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-label-code-sm text-label-code-sm flex items-center justify-center">
+            148
+          </button>
+<button class="px-2.5 py-1 rounded bg-surface-container text-on-surface hover:bg-surface-container-high font-label-code-sm text-label-code-sm">
+            Next
+          </button>
+</div>
+</div>
+</div>
+<!-- ALTERNATIVE KANBAN VIEW (Hidden by default, switched via viewToggle) -->
+<div class="hidden grid-cols-1 md:grid-cols-4 gap-space-md" id="kanbanViewWrapper">
+<!-- Column 1: Pending -->
+<div class="bg-surface-container-low rounded p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary-container"></span>
+<span class="font-label-code-md text-label-code-md text-on-surface font-bold">Pending</span>
+</div>
+<span class="font-label-code-sm text-[10px] bg-surface-container px-1.5 py-0.5 rounded text-on-surface-variant">14</span>
+</div>
+<div class="bg-surface-container p-3 rounded flex flex-col gap-2 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-secondary font-bold">TASK-8830</span>
+<span class="font-label-code-sm text-secondary bg-surface-container-lowest px-1.5 rounded">Medium</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface">Kafka dead-letter topic re-drive &amp; CDC reconciliation</p>
+<div class="flex items-center justify-between font-label-code-sm text-[10px] text-outline mt-1">
+<span class="">sync-engine</span>
+<span class="">pos 2 in queue</span>
+</div>
+</div>
+</div>
+<!-- Column 2: In Progress -->
+<div class="bg-surface-container-low rounded p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-code-md text-label-code-md text-on-surface font-bold">In Progress</span>
+</div>
+<span class="font-label-code-sm text-[10px] bg-surface-container px-1.5 py-0.5 rounded text-secondary">28</span>
+</div>
+<div class="bg-surface-container p-3 rounded flex flex-col gap-2 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-secondary font-bold">TASK-8832</span>
+<span class="font-label-code-sm text-error bg-error-container/30 px-1.5 rounded">Critical</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface">Daily telemetry aggregation &amp; compression pipeline</p>
+<div class="w-full bg-surface-container-lowest h-1 rounded-full overflow-hidden mt-1">
+<div class="bg-secondary h-full" style="width: 68%"></div>
+</div>
+<div class="flex items-center justify-between font-label-code-sm text-[10px] text-outline">
+<span class="">worker-pool</span>
+<span class="text-secondary font-medium">14m runtime</span>
+</div>
+</div>
+</div>
+<!-- Column 3: Completed -->
+<div class="bg-surface-container-low rounded p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-label-code-md text-label-code-md text-on-surface font-bold">Completed</span>
+</div>
+<span class="font-label-code-sm text-[10px] bg-surface-container px-1.5 py-0.5 rounded text-tertiary">1,440</span>
+</div>
+<div class="bg-surface-container p-3 rounded flex flex-col gap-2 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-outline font-bold">TASK-8831</span>
+<span class="font-label-code-sm text-tertiary bg-tertiary-container/30 px-1.5 rounded">High</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface">Global Redis L2 cluster cache invalidation after hotfix</p>
+<div class="flex items-center justify-between font-label-code-sm text-[10px] text-tertiary">
+<span class="">backend-api</span>
+<span class="">✓ 12/12 passing</span>
+</div>
+</div>
+</div>
+<!-- Column 4: Failed -->
+<div class="bg-surface-container-low rounded p-space-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+<span class="font-label-code-md text-label-code-md text-on-surface font-bold">Failed</span>
+</div>
+<span class="font-label-code-sm text-[10px] bg-surface-container px-1.5 py-0.5 rounded text-outline">0</span>
+</div>
+<div class="flex flex-col items-center justify-center p-6 text-center text-outline-variant">
+<span class="material-symbols-outlined text-[32px] text-tertiary/60 mb-2">check_circle</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">No failed tasks reported</span>
+</div>
+</div>
+</div>
+<!-- Quick Stats Footer Telemetry Strip -->
+<div class="bg-surface-container-lowest p-space-md rounded flex flex-col md:flex-row items-center justify-between gap-space-sm shadow-sm"><div class="flex items-center gap-space-md flex-wrap"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tertiary"></span><span class="font-label-code-sm text-label-code-sm text-on-surface font-bold">App Status: Nominal • Active Mock Task Store</span></div><div class="h-3 w-px bg-outline-variant/40 hidden sm:block"></div><span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Ready for automated test execution &amp; chaos injection</span></div><div class="flex items-center gap-space-sm text-outline font-label-code-sm text-[11px]"><span class="">HealOps Testing Engine v2.4</span><button class="hover:text-on-surface flex items-center gap-0.5 ml-2" id="exportCsvBtn"><span class="material-symbols-outlined text-[14px]">download</span> Export CSV</button></div></div>
+</div>
+<!-- SLIDE-OVER QUICK ADD TASK DRAWER / MODAL -->
+<div class="hidden fixed inset-0 z-50 overflow-hidden" id="quickAddModal">
+<!-- Backdrop blur & tint -->
+<div class="absolute inset-0 bg-surface-container-lowest/80 backdrop-blur-sm transition-opacity" id="modalBackdrop"></div>
+<div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+<div class="w-screen max-w-md bg-surface-container-low shadow-2xl flex flex-col justify-between">
+<!-- Drawer Header -->
+<div class="p-space-lg bg-surface-container-lowest flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[22px]">playlist_add</span>
+<div class="flex flex-col">
+<h2 class="font-headline-md text-headline-md text-on-surface leading-tight">Quick Add Task</h2>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Enqueue to distributed cluster</span>
+</div>
+</div>
+<button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors" id="closeModalBtn">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Drawer Form Body -->
+<form class="p-space-lg flex-1 overflow-y-auto flex flex-col gap-space-md" id="createTaskForm">
+<!-- Task Name -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-code-sm text-label-code-sm text-on-surface font-semibold uppercase">Task Name &amp; Description</label>
+<input class="h-9 px-3 bg-surface-container-lowest text-on-surface placeholder:text-outline font-body-md text-body-md rounded focus:outline-none focus:ring-1 focus:ring-secondary" id="newTaskName" placeholder="e.g., Re-index Elastic search partition" required="" type="text">
+<span class="font-label-code-sm text-[10px] text-outline">Clear, descriptive action name for monitoring telemetry</span>
+</div>
+<!-- Target Service -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-code-sm text-label-code-sm text-on-surface font-semibold uppercase">Assigned Service</label>
+<select class="h-9 px-3 bg-surface-container-lowest text-on-surface font-label-code-sm text-label-code-sm rounded focus:outline-none focus:ring-1 focus:ring-secondary cursor-pointer" id="newTaskService">
+<option value="worker-pool">Worker-Pool (Auto-scaling cluster)</option>
+<option value="backend-api">Backend-API (REST/gRPC Gateway)</option>
+<option value="sync-engine">Sync-Engine (Kafka/CDC)</option>
+<option value="ingest-pipeline">Ingest-Pipeline (OTel Telemetry)</option>
+</select>
+</div>
+<!-- Priority -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-code-sm text-label-code-sm text-on-surface font-semibold uppercase">Priority Level</label>
+<div class="grid grid-cols-4 gap-2">
+<label class="flex flex-col items-center justify-center p-2 rounded bg-surface-container cursor-pointer hover:bg-surface-container-high transition-all has-[:checked]:bg-error-container/30 has-[:checked]:text-error">
+<input class="sr-only" name="priorityRadio" type="radio" value="critical">
+<span class="font-label-code-sm text-[11px] font-bold">Critical</span>
+</label>
+<label class="flex flex-col items-center justify-center p-2 rounded bg-surface-container cursor-pointer hover:bg-surface-container-high transition-all has-[:checked]:bg-secondary-container/20 has-[:checked]:text-secondary">
+<input checked="" class="sr-only" name="priorityRadio" type="radio" value="high">
+<span class="font-label-code-sm text-[11px] font-bold">High</span>
+</label>
+<label class="flex flex-col items-center justify-center p-2 rounded bg-surface-container cursor-pointer hover:bg-surface-container-high transition-all has-[:checked]:bg-primary-container/20 has-[:checked]:text-primary">
+<input class="sr-only" name="priorityRadio" type="radio" value="medium">
+<span class="font-label-code-sm text-[11px] font-bold">Medium</span>
+</label>
+<label class="flex flex-col items-center justify-center p-2 rounded bg-surface-container cursor-pointer hover:bg-surface-container-high transition-all has-[:checked]:bg-surface-container-highest has-[:checked]:text-on-surface">
+<input class="sr-only" name="priorityRadio" type="radio" value="low">
+<span class="font-label-code-sm text-[11px] font-bold">Low</span>
+</label>
+</div>
+</div>
+<!-- Execution Constraints: 2 Columns -->
+<div class="grid grid-cols-2 gap-space-sm">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-code-sm text-label-code-sm text-on-surface font-semibold uppercase">Timeout</label>
+<select class="h-9 px-3 bg-surface-container-lowest text-on-surface font-label-code-sm text-label-code-sm rounded focus:outline-none focus:ring-1 focus:ring-secondary cursor-pointer" id="newTaskTimeout">
+<option value="60s">60 seconds</option>
+<option selected="" value="5m">5 minutes</option>
+<option value="15m">15 minutes</option>
+<option value="1h">1 hour</option>
+</select>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-code-sm text-label-code-sm text-on-surface font-semibold uppercase">Retry Policy</label>
+<select class="h-9 px-3 bg-surface-container-lowest text-on-surface font-label-code-sm text-label-code-sm rounded focus:outline-none focus:ring-1 focus:ring-secondary cursor-pointer" id="newTaskRetry">
+<option value="exponential">Exponential Backoff (3x)</option>
+<option value="immediate">Immediate Retry (1x)</option>
+<option value="none">No Retries (Failfast)</option>
+</select>
+</div>
+</div>
+<!-- Autonomous Guardrails Toggle -->
+<div class="p-3 rounded bg-surface-container-lowest flex items-center justify-between mt-2">
+<div class="flex flex-col">
+<span class="font-label-code-sm text-label-code-sm text-on-surface font-medium">HealOps Autonomous Rollback</span>
+<span class="font-label-code-sm text-[10px] text-outline">Trigger instant rollback if health metric drops &gt;5%</span>
+</div>
+<input checked="" class="w-4 h-4 rounded text-secondary focus:ring-0 bg-surface-container cursor-pointer" type="checkbox">
+</div>
+</form>
+<!-- Drawer Footer Actions -->
+<div class="p-space-lg bg-surface-container-lowest flex items-center justify-end gap-space-sm">
+<button class="px-space-md py-2 rounded text-on-surface-variant hover:text-on-surface font-label-code-sm text-label-code-sm" id="cancelModalBtn" type="button">
+            Cancel
+          </button>
+<button class="flex items-center gap-1.5 px-space-lg py-2 rounded bg-primary-container text-on-primary font-bold font-label-code-sm text-label-code-sm hover:bg-primary-container/90 transition-all shadow-md shadow-primary-container/20" id="submitCreateTask" type="button">
+<span class="material-symbols-outlined text-[16px]">send</span>
+            Enqueue Task
+          </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    // --- Interactive State & References ---
+    const searchInput = document.getElementById('taskSearchInput');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const priorityFilter = document.getElementById('priorityFilter');
+    const serviceFilter = document.getElementById('serviceFilter');
+    const statusTabs = document.querySelectorAll('.status-tab');
+    const taskRows = document.querySelectorAll('.task-row');
+    
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    const batchActionBar = document.getElementById('batchActionBar');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+
+    const viewTableBtn = document.getElementById('viewTableBtn');
+    const viewKanbanBtn = document.getElementById('viewKanbanBtn');
+    const tableViewWrapper = document.getElementById('tableViewWrapper');
+    const kanbanViewWrapper = document.getElementById('kanbanViewWrapper');
+
+    const openModalBtn = document.getElementById('openModalBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const cancelModalBtn = document.getElementById('cancelModalBtn');
+    const quickAddModal = document.getElementById('quickAddModal');
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const submitCreateTask = document.getElementById('submitCreateTask');
+    const newTaskName = document.getElementById('newTaskName');
+
+    let currentStatus = 'all';
+
+    // --- Search & Filter Logic ---
+    function filterTasks() {
+      const query = (searchInput.value || '').trim().toLowerCase();
+      const priority = priorityFilter.value;
+      const service = serviceFilter.value;
+
+      clearSearchBtn.classList.toggle('hidden', query.length === 0);
+
+      taskRows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const rowStatus = row.getAttribute('data-status');
+        const rowPriority = row.getAttribute('data-priority');
+        const rowService = row.getAttribute('data-service');
+
+        const matchesQuery = !query || text.includes(query);
+        const matchesStatus = (currentStatus === 'all') || (rowStatus === currentStatus);
+        const matchesPriority = (priority === 'all') || (rowPriority === priority);
+        const matchesService = (service === 'all') || (rowService === service);
+
+        if (matchesQuery && matchesStatus && matchesPriority && matchesService) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    searchInput.addEventListener('input', filterTasks);
+    clearSearchBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      filterTasks();
+      searchInput.focus();
+    });
+
+    priorityFilter.addEventListener('change', filterTasks);
+    serviceFilter.addEventListener('change', filterTasks);
+
+    // --- Status Tab Switching ---
+    statusTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        statusTabs.forEach(t => {
+          t.classList.remove('bg-surface-container', 'text-on-surface', 'font-semibold', 'shadow-sm');
+          t.classList.add('text-on-surface-variant');
+        });
+        tab.classList.add('bg-surface-container', 'text-on-surface', 'font-semibold', 'shadow-sm');
+        tab.classList.remove('text-on-surface-variant');
+        currentStatus = tab.getAttribute('data-status');
+        filterTasks();
+      });
+    });
+
+    // --- Multi-Select Checkboxes ---
+    function updateSelectionState() {
+      const checkedBoxes = document.querySelectorAll('.row-checkbox:checked');
+      const count = checkedBoxes.length;
+
+      if (count > 0) {
+        batchActionBar.classList.remove('hidden');
+        batchActionBar.classList.add('flex');
+        selectedCountSpan.textContent = count;
+      } else {
+        batchActionBar.classList.add('hidden');
+        batchActionBar.classList.remove('flex');
+      }
+
+      selectAllCheckbox.checked = (count === rowCheckboxes.length && count > 0);
+      selectAllCheckbox.indeterminate = (count > 0 && count < rowCheckboxes.length);
+    }
+
+    selectAllCheckbox.addEventListener('change', () => {
+      rowCheckboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+      updateSelectionState();
+    });
+
+    rowCheckboxes.forEach(cb => {
+      cb.addEventListener('change', updateSelectionState);
+    });
+
+    clearSelectionBtn.addEventListener('click', () => {
+      rowCheckboxes.forEach(cb => cb.checked = false);
+      selectAllCheckbox.checked = false;
+      selectAllCheckbox.indeterminate = false;
+      updateSelectionState();
+    });
+
+    // --- Table / Kanban Switcher ---
+    viewTableBtn.addEventListener('click', () => {
+      viewTableBtn.classList.add('bg-surface-container', 'text-secondary', 'shadow-sm');
+      viewTableBtn.classList.remove('text-outline');
+      viewKanbanBtn.classList.remove('bg-surface-container', 'text-secondary', 'shadow-sm');
+      viewKanbanBtn.classList.add('text-outline');
+      tableViewWrapper.classList.remove('hidden');
+      kanbanViewWrapper.classList.add('hidden');
+    });
+
+    viewKanbanBtn.addEventListener('click', () => {
+      viewKanbanBtn.classList.add('bg-surface-container', 'text-secondary', 'shadow-sm');
+      viewKanbanBtn.classList.remove('text-outline');
+      viewTableBtn.classList.remove('bg-surface-container', 'text-secondary', 'shadow-sm');
+      viewTableBtn.classList.add('text-outline');
+      tableViewWrapper.classList.add('hidden');
+      kanbanViewWrapper.classList.remove('hidden');
+      kanbanViewWrapper.classList.add('grid');
+    });
+
+    // --- Slide-Over Quick Add Task Modal ---
+    function openModal() {
+      quickAddModal.classList.remove('hidden');
+      newTaskName.focus();
+    }
+
+    function closeModal() {
+      quickAddModal.classList.add('hidden');
+    }
+
+    openModalBtn.addEventListener('click', openModal);
+    closeModalBtn.addEventListener('click', closeModal);
+    cancelModalBtn.addEventListener('click', closeModal);
+    modalBackdrop.addEventListener('click', closeModal);
+
+    submitCreateTask.addEventListener('click', () => {
+      const name = newTaskName.value.trim();
+      if (!name) {
+        newTaskName.focus();
+        newTaskName.classList.add('ring-1', 'ring-error');
+        return;
+      }
+      newTaskName.classList.remove('ring-1', 'ring-error');
+      
+      // Temporary UX confirmation feedback
+      submitCreateTask.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">sync</span> Enqueuing...';
+      setTimeout(() => {
+        submitCreateTask.innerHTML = '<span class="material-symbols-outlined text-[16px]">check</span> Enqueued';
+        setTimeout(() => {
+          closeModal();
+          newTaskName.value = '';
+          submitCreateTask.innerHTML = '<span class="material-symbols-outlined text-[16px]">send</span> Enqueue Task';
+        }, 400);
+      }, 500);
+    });
+
+    // Simple refresh mock animation
+    const refreshBtn = document.getElementById('refreshTasksBtn');
+    refreshBtn.addEventListener('click', () => {
+      const icon = refreshBtn.querySelector('.material-symbols-outlined');
+      icon.classList.add('animate-spin');
+      setTimeout(() => icon.classList.remove('animate-spin'), 600);
+    });
+
+  })();
+</script></main></div>
+
+</body></html>

@@ -1,0 +1,401 @@
+<!DOCTYPE html><html class="dark" lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface-container":"#171f33","inverse-on-surface":"#283044","on-tertiary-fixed":"#002113","on-tertiary-fixed-variant":"#005236","outline-variant":"#464554","surface":"#0b1326","primary-fixed-dim":"#c0c1ff","error-container":"#93000a","secondary":"#4cd7f6","primary":"#c0c1ff","surface-container-low":"#131b2e","on-tertiary":"#003824","on-tertiary-container":"#000703","on-error":"#690005","background":"#0b1326","on-background":"#dae2fd","secondary-container":"#03b5d3","on-primary-fixed":"#07006c","on-secondary-container":"#00424e","on-error-container":"#ffdad6","on-secondary-fixed":"#001f26","secondary-fixed":"#acedff","inverse-surface":"#dae2fd","tertiary-container":"#00885d","on-surface-variant":"#c7c4d7","tertiary-fixed":"#6ffbbe","tertiary":"#4edea3","surface-tint":"#c0c1ff","outline":"#908fa0","on-primary-fixed-variant":"#2f2ebe","on-secondary":"#003640","inverse-primary":"#494bd6","primary-fixed":"#e1e0ff","on-primary-container":"#0d0096","tertiary-fixed-dim":"#4edea3","surface-container-lowest":"#060e20","surface-dim":"#0b1326","on-primary":"#1000a9","on-secondary-fixed-variant":"#004e5c","primary-container":"#8083ff","error":"#ffb4ab","surface-container-high":"#222a3d","secondary-fixed-dim":"#4cd7f6","surface-container-highest":"#2d3449","on-surface":"#dae2fd","surface-variant":"#2d3449","surface-bright":"#31394d"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"gutter":"1rem","space-xl":"1.5rem","space-lg":"1rem","space-sm":"0.5rem","space-md":"0.75rem","margin":"1.5rem","space-xs":"0.25rem"},"fontFamily":{"headline-lg":["Inter"],"headline-xl":["Inter"],"body-sm":["Inter"],"body-md":["Inter"],"label-code-sm":["JetBrains Mono"],"headline-md":["Inter"],"body-lg":["Inter"],"headline-xl-mobile":["Inter"],"label-code-lg":["JetBrains Mono"],"label-code-md":["JetBrains Mono"]},"fontSize":{"headline-lg":["24px",{"lineHeight":"32px","letterSpacing":"-0.015em","fontWeight":"600"}],"headline-xl":["36px",{"lineHeight":"44px","letterSpacing":"-0.02em","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"body-md":["13px",{"lineHeight":"18px","fontWeight":"400"}],"label-code-sm":["10px",{"lineHeight":"14px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-md":["18px",{"lineHeight":"26px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["15px",{"lineHeight":"22px","letterSpacing":"-0.005em","fontWeight":"400"}],"headline-xl-mobile":["28px",{"lineHeight":"36px","letterSpacing":"-0.02em","fontWeight":"600"}],"label-code-lg":["13px",{"lineHeight":"18px","fontWeight":"500"}],"label-code-md":["11px",{"lineHeight":"16px","letterSpacing":"0.02em","fontWeight":"500"}]}}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl z-50 flex items-center justify-between px-margin shadow-[0_1px_8px_rgba(0,0,0,0.4)]"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-sm"><img alt="HealOps Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1X-YWp0OYTApdnk52Oh-qZHatag3ECeZZr53MuHh0bWQo-gdPuQeiMl5-apcRyF45gedPfQv6fMvpfyuAGL0F7CRFUXT3LLNLg1Jm7WTsxwyOnA3-ay91aH4lSoCHi9PY_YqH-8UvvMsSchYzx-N-uHNN1K0Vi9tDOanfBs2ENXHAWrIW_A0lT5pkcuEuiTmk-yzXMfM6yPmIkTztCp27ZS4T_4R98MQ5gPXy3UYi1kVVFBTUIDz6n3cvw"><span class="font-headline-md text-headline-md font-bold tracking-tight text-on-surface">HealOps</span></div><div class="h-4 w-px bg-outline-variant/40 mx-space-xs"></div><div class="flex items-center gap-space-xs px-space-sm py-1 bg-surface-container rounded cursor-pointer hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-[16px] text-secondary">hub</span><span class="font-label-code-md text-label-code-md text-on-surface">prod-us-east-1 / k8s-task-cluster-04</span><span class="material-symbols-outlined text-[16px] text-on-surface-variant">expand_more</span></div><span class="px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm bg-error-container/30 text-error">PRODUCTION</span><div class="hidden xl:flex items-center gap-2 px-space-sm py-1 rounded bg-tertiary-container/20 shadow-[0_0_8px_1px_rgba(78,222,163,0.15)]"><span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-tertiary"></span></span><span class="font-label-code-md text-label-code-md text-tertiary font-medium">HealOps Agent: Active &amp; Watching</span></div></div><div class="flex items-center gap-space-md"><div class="relative flex items-center w-64 lg:w-80"><span class="material-symbols-outlined absolute left-2.5 text-[16px] text-outline">search</span><input class="w-full h-8 pl-8 pr-3 bg-surface-container-lowest text-on-surface placeholder:text-outline-variant font-label-code-sm text-label-code-sm rounded focus:outline-none focus:ring-1 focus:ring-primary-container transition-all" placeholder="Search tasks, incidents, traces, logs... ⌘K" type="text"></div><button class="relative p-1.5 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-error text-on-error font-label-code-sm text-[9px] font-bold">3</span></button><a class="p-1.5 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors" href="#" title="Documentation &amp; API"><span class="material-symbols-outlined text-[20px]">description</span></a><div class="h-5 w-px bg-outline-variant/40"></div><div class="flex items-center gap-space-sm pl-space-xs"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-1 ring-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjAD7wTE9GvegzVGJpIkzgtl9QIbyImYowwmBmQ9Mo5ITKPrOpPfAJ_BToPdQ0r79Uhke13_7oRQuVliqc6YtpdfnQ1bMPJorCU_zc5zc0Cj0KhE_JZhw1Ha_QIO_oWDYzIHT2Gn1z-QVxcUxe61a717kyoNhg-FR0cKF73zj9pV4KlAaQ8USraqpd4K_8OY7o0nChhylkh5AeaDG7xxM_O50UyLyNSbpeMbFnutx1DEP0-BFOLIpc"><div class="hidden md:flex flex-col"><span class="font-body-sm text-body-sm font-medium text-on-surface leading-none">Alex Vance</span><span class="font-label-code-sm text-label-code-sm text-on-surface-variant leading-none mt-1">Lead SRE &amp; Platform Eng</span></div></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest z-40 flex flex-col justify-between shadow-[1px_0_12px_rgba(0,0,0,0.3)]"><div class="flex flex-col py-space-md"><div class="px-space-md pb-space-sm mb-space-xs"><span class="font-label-code-sm text-label-code-sm text-outline uppercase tracking-wider font-semibold">Autonomous Engine</span></div><nav class="flex flex-col gap-0.5 px-space-sm" data-active-classes="bg-primary-container text-on-primary font-bold shadow-[inset_3px_0_0_0_#c0c1ff]"><a class="flex items-center justify-between px-space-md py-2 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="dashboard" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">dashboard</span><span class="font-body-md text-body-md">Dashboard</span></div></a><a class="flex items-center justify-between px-space-md py-2 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="tasks" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">check_box</span><span class="font-body-md text-body-md">Tasks</span></div></a><a class="flex items-center justify-between px-space-md py-2 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="test-results" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">science</span><span class="font-body-md text-body-md">Test Results</span></div></a><a class="flex items-center justify-between px-space-md py-2 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="incidents" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">warning</span><span class="font-body-md text-body-md">Incidents</span></div><span class="px-1.5 py-0.5 rounded font-label-code-sm text-label-code-sm bg-error-container text-on-error-container font-bold">2</span></a><a aria-current="page" class="flex items-center justify-between px-space-md py-2 rounded transition-all bg-primary-container text-on-primary font-bold shadow-[inset_3px_0_0_0_#c0c1ff]" data-path="ai-analysis" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">psychology</span><span class="font-body-md text-body-md">AI Analysis</span></div><span class="px-1.5 py-0.5 rounded font-label-code-sm text-label-code-sm bg-secondary-container/20 text-secondary font-semibold">AI</span></a><a class="flex items-center justify-between px-space-md py-2 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="system-health" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">pulse_alert</span><span class="font-body-md text-body-md">System Health</span></div></a><a class="flex items-center justify-between px-space-md py-2 rounded text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="settings" href="#"><div class="flex items-center gap-space-md"><span class="material-symbols-outlined text-[18px]">settings</span><span class="font-body-md text-body-md">Settings</span></div></a></nav></div><div class="p-space-md m-space-sm bg-surface-container-low rounded flex flex-col gap-space-sm"><div class="flex items-center justify-between"><div class="flex items-center gap-1.5"><span class="inline-block w-2 h-2 rounded-full bg-tertiary"></span><span class="font-label-code-sm text-label-code-sm text-on-surface font-medium">24/24 Pods Healthy</span></div><span class="font-label-code-sm text-label-code-sm text-tertiary">100%</span></div><div class="flex items-center justify-between pt-1"><span class="font-label-code-sm text-label-code-sm text-on-surface-variant">SLA 30d</span><span class="font-label-code-sm text-label-code-sm text-secondary font-semibold">99.98% Uptime</span></div><div class="pt-2 mt-1 flex items-center justify-between"><span class="font-label-code-sm text-label-code-sm text-outline">v2.4.1-prod</span><span class="font-label-code-sm text-label-code-sm text-outline-variant">Autonomous</span></div></div></aside><div class="pl-64"><main class="relative w-full pt-16 bg-surface min-h-screen px-gutter py-space-lg"><div class="flex flex-col w-full">
+<!-- Top Meta Navigation & Executive Actions -->
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md mb-space-lg">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs font-label-code-sm text-label-code-sm text-outline">
+<span class="hover:text-primary transition-colors cursor-pointer">Incidents</span>
+<span class="">/</span>
+<span class="hover:text-primary transition-colors cursor-pointer text-on-surface-variant">INC-9482</span>
+<span class="">/</span>
+<span class="text-secondary font-semibold">AI Deep Root Cause Analysis</span>
+</div>
+<div class="flex flex-wrap items-center gap-space-sm pt-1">
+<h1 class="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">AI Incident Analysis: INC-9482</h1>
+<div class="flex items-center gap-space-xs px-2.5 py-1 bg-tertiary-container/30 text-tertiary rounded shadow-[0_0_10px_rgba(78,222,163,0.25)]">
+<span class="material-symbols-outlined text-[15px] animate-spin" style="animation-duration: 4s;">check_circle</span>
+<span class="font-label-code-sm text-label-code-sm font-semibold tracking-wide uppercase">Auto-Remediated</span>
+</div>
+<div class="flex items-center gap-space-xs px-2 py-1 bg-error-container/35 text-error rounded font-label-code-sm text-label-code-sm font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-error animate-ping"></span>
+<span class="">P1 - HIGH SEVERITY</span>
+</div>
+<div class="flex items-center gap-space-xs px-2.5 py-1 bg-surface-container-high rounded border border-outline-variant/40 font-label-code-sm text-label-code-sm text-primary-fixed-dim"><span class="material-symbols-outlined text-[15px] text-primary">smart_toy</span><span class="">AI Diagnostics (Mock Model Inference Engine)</span></div></div>
+</div>
+<!-- Executive Action Triggers -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<button class="flex items-center gap-space-xs px-3 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface text-body-sm font-medium rounded transition-all shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">file_download</span>
+<span class="">Export Postmortem (PDF/MD)</span>
+</button>
+<button class="flex items-center gap-space-xs px-3 py-1.5 bg-primary hover:bg-primary-fixed-dim text-on-primary font-headline-md text-body-sm rounded shadow-[0_0_14px_rgba(192,193,255,0.3)] transition-all">
+<span class="material-symbols-outlined text-[16px]">account_tree</span>
+<span class="">Apply Fix to Terraform</span>
+</button>
+<button class="flex items-center gap-space-xs px-2.5 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface rounded transition-colors" title="Submit feedback to neural tuning pipeline">
+<span class="material-symbols-outlined text-[18px]">thumbs_up_down</span>
+<span class="hidden sm:inline font-body-sm text-body-sm">Feedback</span>
+</button>
+</div>
+</div>
+<!-- Incident Telemetry Overview Strip -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md mb-space-lg">
+<!-- Summary Core Note -->
+<div class="md:col-span-6 xl:col-span-5 bg-surface-container p-space-md rounded flex flex-col justify-between shadow-md relative overflow-hidden">
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+<div>
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-code-sm text-label-code-sm uppercase tracking-wider text-secondary font-semibold">Primary RCA Vector</span>
+<span class="font-label-code-sm text-label-code-sm text-outline-variant">Triage Mode: Heuristic ML</span>
+</div>
+<p class="font-body-lg text-body-lg text-on-surface font-medium leading-snug">
+          Pod <span class="font-label-code-md text-label-code-md text-secondary bg-surface-container-lowest px-1.5 py-0.5 rounded">task-worker-7dfb</span> OOMKilled due to unthrottled batch payload ingestion during 10:00 UTC schedule.
+        </p>
+</div>
+<div class="pt-space-sm mt-space-sm flex flex-wrap items-center gap-x-space-md gap-y-1 font-label-code-sm text-label-code-sm text-on-surface-variant">
+<div><span class="text-outline">Service:</span> <span class="text-on-surface font-semibold">task-worker-service</span></div>
+<div><span class="text-outline">Cluster:</span> <span class="text-on-surface">prod-us-east-1</span></div>
+<div><span class="text-outline">Namespace:</span> <span class="text-on-surface">default</span></div>
+</div>
+</div>
+<!-- AI Confidence Gauge -->
+<div class="md:col-span-3 xl:col-span-3 bg-surface-container p-space-md rounded flex items-center justify-between shadow-md relative">
+<div class="flex flex-col justify-center">
+<span class="font-label-code-sm text-label-code-sm uppercase tracking-wider text-outline font-semibold">Inference Reliability</span>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-label-code-lg text-headline-xl text-primary font-bold tracking-tight">98.4%</span>
+<span class="font-label-code-sm text-label-code-sm text-tertiary">CONFIDENT</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1">Kernel cgroup verified &amp; traces correlated</span>
+</div>
+<div class="relative flex items-center justify-center">
+<svg class="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
+<path class="text-surface-container-high" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
+<path class="text-secondary drop-shadow-[0_0_6px_rgba(76,215,246,0.5)]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="98.4, 100" stroke-linecap="round" stroke-width="3.5"></path>
+</svg>
+<span class="absolute font-label-code-sm text-label-code-sm text-secondary font-bold">98%</span>
+</div>
+</div>
+<!-- Detection to Recovery Metrics -->
+<div class="md:col-span-3 xl:col-span-4 bg-surface-container p-space-md rounded flex flex-col justify-between shadow-md">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-label-code-sm uppercase tracking-wider text-outline font-semibold">Autonomous SLA Metrics</span>
+<span class="flex items-center gap-1 font-label-code-sm text-label-code-sm text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>Zero Data Loss
+        </span>
+</div>
+<div class="grid grid-cols-3 gap-space-sm pt-space-xs">
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Detection Time</span>
+<span class="font-label-code-lg text-headline-md text-on-surface font-bold">4.2<span class="text-body-sm font-normal text-outline">s</span></span>
+<span class="font-label-code-sm text-label-code-sm text-tertiary">-68% vs avg</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Auto-Healing</span>
+<span class="font-label-code-lg text-headline-md text-secondary font-bold">38<span class="text-body-sm font-normal text-outline">s</span></span>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-medium">Auto-healed</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Dropped Data</span>
+<span class="font-label-code-lg text-headline-md text-tertiary font-bold">0<span class="text-body-sm font-normal text-outline"> rec</span></span>
+<span class="font-label-code-sm text-label-code-sm text-tertiary">Queues safe</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Primary Intelligence Workbench: Two Columns -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
+<!-- LEFT COLUMN: Diagnosis, Logs & Timeline (7 Cols) -->
+<div class="xl:col-span-7 flex flex-col gap-space-lg">
+<!-- 1. Probable Cause Card (AI Diagnosis) -->
+<div class="bg-surface-container rounded p-space-md shadow-md">
+<div class="flex items-center justify-between pb-space-sm mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-primary">psychology</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Probable Cause &amp; Fault Domain</h2>
+</div>
+<div class="flex items-center gap-1.5 px-2 py-0.5 bg-surface-container-high rounded text-on-surface-variant font-label-code-sm text-label-code-sm"><span class="text-outline">Model:</span><span class="text-primary font-semibold">HealLLM-Ops-v3 (Mock • Ready for Claude / GPT-4o)</span></div>
+</div>
+<div class="bg-surface-container-lowest p-space-md rounded font-body-md text-body-md text-on-surface space-y-space-sm leading-relaxed">
+<p class="">
+            An abrupt memory ballooning condition manifested inside <code class="text-secondary bg-surface-container px-1 py-0.5 rounded font-label-code-sm">TaskDecompressorWorker.process()</code>.
+            Payload chunk ingestion received batch gzip streams without memory boundary guards, causing heap allocation to exceed the pod container boundary of <span class="text-error font-semibold font-label-code-sm">1024 MiB</span> within 1.3 seconds.
+          </p>
+<div class="bg-surface-container-high/50 p-space-sm rounded flex items-center justify-between">
+<div class="flex items-center gap-space-sm min-w-0">
+<span class="material-symbols-outlined text-[20px] text-error flex-shrink-0">commit</span>
+<div class="min-w-0 flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Identified Culprit Commit</span>
+<span class="font-label-code-md text-label-code-md text-secondary truncate font-semibold">
+                  #7f8a12 - 'Add streaming decompression for gzip tasks'
+                </span>
+</div>
+</div>
+<a class="px-2 py-1 bg-surface-container hover:bg-surface-container-highest text-on-surface font-label-code-sm text-label-code-sm rounded transition-colors whitespace-nowrap" href="#">
+              Inspect Diff →
+            </a>
+</div>
+</div>
+</div>
+<!-- 2. Evidence from Logs & Traces (Interactive Log Terminal) -->
+<div class="bg-surface-container rounded p-space-md shadow-md flex flex-col">
+<div class="flex items-center justify-between pb-space-sm mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-secondary">terminal</span>
+<h3 class="font-headline-md text-headline-md text-on-surface">Correlated Evidence Stream</h3>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant font-medium">Log Stream Synced</span>
+</div>
+</div>
+<!-- Terminal Shell UI -->
+<div class="bg-surface-container-lowest rounded p-space-md font-label-code-sm text-label-code-sm text-on-surface flex flex-col gap-1.5 overflow-x-auto shadow-inner">
+<div class="flex items-center gap-2 text-outline pb-1 mb-1">
+<div class="flex gap-1.5">
+<div class="w-2.5 h-2.5 rounded-full bg-error/70"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-secondary-container/70"></div>
+<div class="w-2.5 h-2.5 rounded-full bg-tertiary/70"></div>
+</div>
+<span class="text-outline-variant font-label-code-sm text-label-code-sm">cgroup_collector &amp; k8s-pod-journal stdout</span>
+</div>
+<div class="leading-5 py-0.5 hover:bg-surface-container-low px-1 rounded transition-colors">
+<span class="text-outline">[10:14:02.112]</span>
+<span class="text-secondary font-bold">WARN</span>
+<span class="text-primary-fixed-dim">[cgroup]</span>
+<span class="">memory.current (1048576000) reached high watermark threshold (95%)</span>
+</div>
+<div class="leading-5 py-0.5 bg-error-container/20 px-1 rounded text-on-surface">
+<span class="text-outline">[10:14:03.442]</span>
+<span class="text-error font-bold">ERROR</span>
+<span class="text-error-container text-on-error-container px-1 rounded">[task-worker]</span>
+<span class="text-error font-semibold">Heap allocation failure - Out of Memory (Process killed by kernel OOM-killer)</span>
+</div>
+<div class="leading-5 py-0.5 hover:bg-surface-container-low px-1 rounded transition-colors">
+<span class="text-outline">[10:14:04.010]</span>
+<span class="text-secondary font-bold">INFO</span>
+<span class="text-secondary">[HealOps-Agent]</span>
+<span class="">Self-healing initiated: Expanding cgroup memory limit to 2Gi and spawning replacement pod <span class="text-primary-fixed">task-worker-7dfb-9x</span></span>
+</div>
+<div class="leading-5 py-0.5 bg-tertiary-container/10 px-1 rounded text-on-surface">
+<span class="text-outline">[10:14:38.204]</span>
+<span class="text-tertiary font-bold">SUCCESS</span>
+<span class="text-tertiary">[HealOps-Agent]</span>
+<span class="text-tertiary font-medium">Pod healthy, backlog resumed with throttled chunk size (50MB streaming buffer)</span>
+</div>
+</div>
+</div>
+<!-- 3. Interactive Vertical Timeline of Events -->
+<div class="bg-surface-container rounded p-space-md shadow-md">
+<div class="flex items-center justify-between pb-space-sm mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-outline">history_toggle_off</span>
+<h3 class="font-headline-md text-headline-md text-on-surface">Execution &amp; Telemetry Timeline</h3>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-outline">Resolution Window: 42s total</span>
+</div>
+<div class="relative pl-6 space-y-space-md pt-2">
+<!-- Continuous background trace indicator -->
+<div class="absolute left-2.5 top-3 bottom-3 w-0.5 bg-surface-container-highest"></div>
+<!-- Event 1 -->
+<div class="relative flex items-start gap-space-md group">
+<div class="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-secondary-container ring-4 ring-surface-container flex items-center justify-center">
+<span class="w-1.5 h-1.5 rounded-full bg-surface"></span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-md text-label-code-md text-on-surface font-semibold">10:13:58 UTC</span>
+<span class="px-1.5 py-0.2 bg-surface-container-high rounded font-label-code-sm text-label-code-sm text-outline">Ingress Queue</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Sudden ingress traffic batch burst (4,200 msgs/sec) queued into worker ingest pool.</p>
+</div>
+</div>
+<!-- Event 2 -->
+<div class="relative flex items-start gap-space-md group">
+<div class="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-secondary ring-4 ring-surface-container flex items-center justify-center">
+<span class="w-1.5 h-1.5 rounded-full bg-surface"></span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-md text-label-code-md text-secondary font-semibold">10:14:02 UTC</span>
+<span class="px-1.5 py-0.2 bg-surface-container-high rounded font-label-code-sm text-label-code-sm text-secondary">Prometheus</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Threshold memory breach detected: worker consumed 98% of allocatable limit.</p>
+</div>
+</div>
+<!-- Event 3 -->
+<div class="relative flex items-start gap-space-md group">
+<div class="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-error ring-4 ring-surface-container flex items-center justify-center shadow-[0_0_8px_rgba(255,180,171,0.5)]">
+<span class="w-1.5 h-1.5 rounded-full bg-surface"></span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-md text-label-code-md text-error font-semibold">10:14:03 UTC</span>
+<span class="px-1.5 py-0.2 bg-error-container/40 rounded font-label-code-sm text-label-code-sm text-error">Pod Eviction</span>
+</div>
+<p class="font-body-sm text-body-sm text-error mt-0.5 font-medium">Pod task-worker-7dfb crash (Linux kernel SIGKILL, exit code 137 OOM).</p>
+</div>
+</div>
+<!-- Event 4 -->
+<div class="relative flex items-start gap-space-md group">
+<div class="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-primary-container ring-4 ring-surface-container flex items-center justify-center">
+<span class="w-1.5 h-1.5 rounded-full bg-surface"></span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-md text-label-code-md text-primary font-semibold">10:14:05 UTC</span>
+<span class="px-1.5 py-0.2 bg-primary/20 rounded font-label-code-sm text-label-code-sm text-primary">Neural Isolation</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">AI Engine isolated decompression loop as root cause; mapped culprit to git commit #7f8a12.</p>
+</div>
+</div>
+<!-- Event 5 -->
+<div class="relative flex items-start gap-space-md group">
+<div class="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-secondary-container ring-4 ring-surface-container flex items-center justify-center">
+<span class="w-1.5 h-1.5 rounded-full bg-surface"></span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-md text-label-code-md text-secondary font-semibold">10:14:06 UTC</span>
+<span class="px-1.5 py-0.2 bg-secondary-container/20 rounded font-label-code-sm text-label-code-sm text-secondary">Autonomous Patch</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">HealOps autonomous policy executed dynamic vertical pod memory bump to 2.0Gi.</p>
+</div>
+</div>
+<!-- Event 6 -->
+<div class="relative flex items-start gap-space-md group">
+<div class="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-tertiary ring-4 ring-surface-container flex items-center justify-center shadow-[0_0_8px_rgba(78,222,163,0.5)]">
+<span class="w-1.5 h-1.5 rounded-full bg-surface"></span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-code-md text-label-code-md text-tertiary font-semibold">10:14:40 UTC</span>
+<span class="px-1.5 py-0.2 bg-tertiary-container/30 rounded font-label-code-sm text-label-code-sm text-tertiary">Resolved</span>
+</div>
+<p class="font-body-sm text-body-sm text-tertiary mt-0.5 font-medium">Incident completely mitigated; 12 synthetic smoke tests passed at 100% throughput.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: AI Recommendations & Autonomous DevOps Actions (5 Cols) -->
+<div class="xl:col-span-5 flex flex-col gap-space-lg">
+<!-- 4. AI-Generated Recommendations Card -->
+<div class="bg-surface-container rounded p-space-md shadow-md flex flex-col">
+<div class="flex items-center justify-between pb-space-sm mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-primary">auto_awesome</span>
+<h3 class="font-headline-md text-headline-md text-on-surface">Architectural Remediation</h3>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-outline">3 Prescriptions</span>
+</div>
+<div class="flex flex-col gap-space-sm">
+<!-- Rec 1 -->
+<div class="p-space-sm bg-surface-container-low rounded hover:bg-surface-container-high/60 transition-colors flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="px-1.5 py-0.5 rounded bg-error-container/30 text-error font-label-code-sm text-label-code-sm font-semibold">CRITICAL FIX</span>
+<span class="font-label-code-sm text-label-code-sm text-outline-variant">Effort: ~30m</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-on-surface mt-0.5">Enable backpressure streaming on task decompressor</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+              Prevent in-memory gzip expansion by pipelining buffered bytes directly to persistent disk spillover.
+            </p>
+</div>
+<!-- Rec 2 -->
+<div class="p-space-sm bg-surface-container-low rounded hover:bg-surface-container-high/60 transition-colors flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="px-1.5 py-0.5 rounded bg-primary-container/30 text-primary-fixed-dim font-label-code-sm text-label-code-sm font-semibold">HELM VALUE</span>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-medium">Auto-PR Available</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-on-surface mt-0.5">Increase default memory requests in Helm chart from 512Mi to 1.5Gi</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+              Guarantees the cgroup quota leaves ample headroom during parallel batch ingest spikes.
+            </p>
+</div>
+<!-- Rec 3 -->
+<div class="p-space-sm bg-surface-container-low rounded hover:bg-surface-container-high/60 transition-colors flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-code-sm text-label-code-sm font-semibold">SAFETY RULE</span>
+<span class="font-label-code-sm text-label-code-sm text-outline-variant">Effort: 5m</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-on-surface mt-0.5">Tune circuit breaker timeout to fail fast on batches &gt; 250MB</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+              Rejects payloads exceeding safety threshold at API gateway before queue ingress ingestion.
+            </p>
+</div>
+</div>
+</div>
+<!-- 5. Autonomous Actions Panel -->
+<div class="bg-surface-container rounded p-space-md shadow-md flex flex-col">
+<div class="flex items-center justify-between pb-space-sm mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-[18px] text-secondary">smart_toy</span>
+<h3 class="font-headline-md text-headline-md text-on-surface">Suggested DevOps Actions</h3>
+</div>
+<span class="px-2 py-0.5 bg-secondary-container/20 text-secondary rounded font-label-code-sm text-label-code-sm font-semibold">Ready</span>
+</div>
+<div class="flex flex-col gap-space-sm">
+<!-- Primary Action: Merge Hotfix PR -->
+<div class="bg-surface-container-lowest p-space-sm rounded flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-tertiary">call_merge</span>
+<span class="font-label-code-md text-label-code-md text-on-surface font-semibold">Hotfix PR #412 Generated</span>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-tertiary">Branch: healops-patch-412</span>
+</div>
+<div class="bg-surface-container p-space-xs rounded font-label-code-sm text-label-code-sm text-on-surface-variant">
+<span class="text-error">- buffer.readAll()</span><br>
+<span class="text-tertiary">+ buffer.streamPipe({ maxChunkSize: '50mb' })</span>
+</div>
+<button class="w-full py-2 bg-tertiary-container hover:bg-tertiary text-on-tertiary-container font-headline-md text-body-sm rounded flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(78,222,163,0.3)] transition-all">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span class="">Merge Auto-Generated Hotfix PR #412</span>
+</button>
+</div>
+<!-- Secondary Action: Rollback -->
+<div class="flex items-center justify-between p-space-sm bg-surface-container-low rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px] text-outline">history</span>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-medium text-on-surface">Rollback to stable deployment</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">Target: release v2.3.9</span>
+</div>
+</div>
+<button class="px-3 py-1 bg-surface-container hover:bg-surface-container-highest text-on-surface font-label-code-sm text-label-code-sm rounded transition-colors">
+              Execute
+            </button>
+</div>
+<!-- Secondary Action: Update Alert -->
+<div class="flex items-center justify-between p-space-sm bg-surface-container-low rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px] text-outline">notification_important</span>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-medium text-on-surface">Prometheus memory alert update</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">Lower threshold trigger to 85%</span>
+</div>
+</div>
+<button class="px-3 py-1 bg-surface-container hover:bg-surface-container-highest text-on-surface font-label-code-sm text-label-code-sm rounded transition-colors">
+              Update Rule
+            </button>
+</div>
+<!-- Secondary Action: Chaos Regression -->
+<div class="flex items-center justify-between p-space-sm bg-surface-container-low rounded hover:bg-surface-container-high transition-colors">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[18px] text-outline">science</span>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-medium text-on-surface">Automated chaos regression test</span>
+<span class="font-label-code-sm text-label-code-sm text-outline">Inject 300MB burst payloads in staging</span>
+</div>
+</div>
+<button class="px-3 py-1 bg-surface-container hover:bg-surface-container-highest text-on-surface font-label-code-sm text-label-code-sm rounded transition-colors">
+              Trigger Run
+            </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div></main></div>
+
+</body></html>
