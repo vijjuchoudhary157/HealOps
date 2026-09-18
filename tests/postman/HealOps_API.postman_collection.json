@@ -148,10 +148,11 @@
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Response contains JWT\", function () {",
+                  "pm.test(\"Response contains valid JWT\", function () {",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData).to.have.property(\"token\");",
-                  "    pm.environment.set(\"token\", jsonData.token);",
+                  "    pm.expect(jsonData.token).to.be.a(\"string\").and.to.not.be.empty;",
+                  "    pm.collectionVariables.set(\"authToken\", jsonData.token);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -207,7 +208,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}",
+                "value": "Bearer {{authToken}}",
                 "type": "text"
               }
             ],
@@ -252,7 +253,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}",
+                "value": "Bearer {{authToken}}",
                 "type": "text"
               }
             ],
@@ -300,7 +301,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}",
+                "value": "Bearer {{authToken}}",
                 "type": "text"
               }
             ],
@@ -330,7 +331,7 @@
               "script": {
                 "exec": [
                   "pm.test(\"Token is present before request\", function () {",
-                  "    pm.expect(pm.environment.get(\"token\")).to.be.a(\"string\").and.to.not.be.empty;",
+                  "    pm.expect(pm.collectionVariables.get(\"authToken\")).to.be.a(\"string\").and.to.not.be.empty;",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -353,7 +354,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}",
+                "value": "Bearer {{authToken}}",
                 "type": "text"
               }
             ],
@@ -378,7 +379,7 @@
               "script": {
                 "exec": [
                   "pm.test(\"Token is present before request\", function () {",
-                  "    pm.expect(pm.environment.get(\"token\")).to.be.a(\"string\").and.to.not.be.empty;",
+                  "    pm.expect(pm.collectionVariables.get(\"authToken\")).to.be.a(\"string\").and.to.not.be.empty;",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -407,7 +408,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{token}}",
+                "value": "Bearer {{authToken}}",
                 "type": "text"
               }
             ],
