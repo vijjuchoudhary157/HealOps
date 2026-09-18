@@ -28,7 +28,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://ci_user:ci_password@localhost:5432/ci_healops
-      TEST_DATABASE_URL: postgresql://ci_user:ci_password@localhost:5432/ci_healops
+      TEST_DATABASE_URL: postgresql://ci_user:ci_password@localhost:5432/ci_healops_test
       JWT_SECRET: super_secret_ci_key_123
       PORT: 5000
       VITE_API_URL: http://localhost:5000
@@ -49,6 +49,9 @@ jobs:
       - name: Install Backend Dependencies
         working-directory: ./backend
         run: npm ci
+
+      - name: Create Test Database
+        run: PGPASSWORD=ci_password psql -h localhost -U ci_user -d postgres -c "CREATE DATABASE ci_healops_test;"
 
       - name: Initialize Database Schema
         working-directory: ./backend
