@@ -1,0 +1,94 @@
+name: HealOps CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    name: Build & Test Workflow
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: ci_user
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: ci_healops
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://ci_user:ci_password@localhost:5432/ci_healops
+      TEST_DATABASE_URL: postgresql://ci_user:ci_password@localhost:5432/ci_healops
+      JWT_SECRET: super_secret_ci_key_123
+      PORT: 5000
+      VITE_API_URL: http://localhost:5000
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Initialize Database Schema
+        working-directory: ./backend
+        run: npm run db:init
+
+      - name: Run Backend Tests (Jest)
+        working-directory: ./backend
+        run: npm test
+
+      - name: Start Backend Server
+        working-directory: ./backend
+        run: npm start &
+        
+      - name: Wait for Backend to be Ready
+        run: |
+          npx -y wait-on http://localhost:5000/health -t 30000
+
+      - name: Run API Tests (Newman)
+        run: npm run test:api
+
+      - name: Start Frontend Server
+        run: npm run dev -- --port 5173 &
+
+      - name: Wait for Frontend to be Ready
+        run: |
+          npx -y wait-on http://localhost:5173 -t 30000
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E Tests (Playwright)
+        run: npm run test:e2e
+
+      - name: Run Frontend Production Build
+        run: npm run build
+
+      - name: Upload Playwright Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
