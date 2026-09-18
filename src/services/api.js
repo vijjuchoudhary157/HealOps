@@ -19,7 +19,12 @@ async function fetchWithAuth(url, options = {}) {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `API Error: ${response.status} ${response.statusText}`);
+    const message = errorData?.error?.message || errorData?.message || `API Error: ${response.status} ${response.statusText}`;
+    throw new Error(message);
+  }
+
+  if (response.status === 204) {
+    return null;
   }
 
   return response.json();

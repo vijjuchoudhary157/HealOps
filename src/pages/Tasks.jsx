@@ -36,7 +36,8 @@ export default function Tasks() {
   }, []);
 
   const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(search.toLowerCase()) || task.desc.toLowerCase().includes(search.toLowerCase());
+    const descText = task.description || task.desc || '';
+    const matchesSearch = task.title.toLowerCase().includes(search.toLowerCase()) || descText.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
     return matchesSearch && matchesStatus && matchesPriority;
@@ -66,7 +67,7 @@ export default function Tasks() {
     try {
       const taskData = {
         title: newTask.title,
-        desc: newTask.desc,
+        description: newTask.desc,
         priority: newTask.priority,
         status: 'pending',
         assignee: user?.username || 'Unassigned',
@@ -195,7 +196,7 @@ export default function Tasks() {
                           <span className={`font-label-code-sm text-label-code-sm ${task.priority === 'critical' ? 'text-secondary font-bold' : 'text-outline'}`}>{task.id}</span>
                           <span className="font-body-md text-body-md font-medium text-on-surface group-hover:text-primary transition-colors cursor-pointer">{task.title}</span>
                         </div>
-                        <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{task.desc}</p>
+                        <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">{task.description || task.desc}</p>
                       </div>
                     </td>
                     <td className="py-2.5 px-space-sm">
@@ -252,8 +253,9 @@ export default function Tasks() {
             <h2 className="font-headline-md text-on-surface">Create New Task</h2>
             <form onSubmit={handleCreateTask} className="flex flex-col gap-space-md">
               <div className="flex flex-col gap-space-xs">
-                <label className="font-label-code-sm text-on-surface-variant">Task Title</label>
+                <label htmlFor="task-title" className="font-label-code-sm text-on-surface-variant">Task Title</label>
                 <input 
+                  id="task-title"
                   className="w-full h-9 bg-surface-container-lowest text-on-surface rounded-lg px-3 outline-none focus:ring-1 focus:ring-primary"
                   required
                   value={newTask.title}
@@ -262,8 +264,9 @@ export default function Tasks() {
                 />
               </div>
               <div className="flex flex-col gap-space-xs">
-                <label className="font-label-code-sm text-on-surface-variant">Description</label>
+                <label htmlFor="task-desc" className="font-label-code-sm text-on-surface-variant">Description</label>
                 <textarea 
+                  id="task-desc"
                   className="w-full bg-surface-container-lowest text-on-surface rounded-lg p-3 outline-none focus:ring-1 focus:ring-primary resize-none h-24"
                   required
                   value={newTask.desc}
@@ -272,8 +275,9 @@ export default function Tasks() {
                 ></textarea>
               </div>
               <div className="flex flex-col gap-space-xs">
-                <label className="font-label-code-sm text-on-surface-variant">Priority</label>
+                <label htmlFor="task-priority" className="font-label-code-sm text-on-surface-variant">Priority</label>
                 <select 
+                  id="task-priority"
                   className="w-full h-9 bg-surface-container-lowest text-on-surface rounded-lg px-3 outline-none focus:ring-1 focus:ring-primary"
                   value={newTask.priority}
                   onChange={e => setNewTask({...newTask, priority: e.target.value})}

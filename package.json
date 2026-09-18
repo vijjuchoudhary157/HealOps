@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:api": "newman run tests/postman/HealOps_API.postman_collection.json -e tests/postman/HealOps_Local.postman_environment.json"
+    "test:api": "newman run tests/postman/HealOps_API.postman_collection.json -e tests/postman/HealOps_Local.postman_environment.json",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +22,7 @@
     "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@vitejs/plugin-react": "^6.1.1",
     "autoprefixer": "^10.6.1",
     "newman": "^6.2.2",
