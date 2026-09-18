@@ -1,7 +1,196 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  
+  const { login, register } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      if (isLogin) {
+        await login(email, password);
+      } else {
+        await register(name || email.split('@')[0], email, password);
+      }
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Authentication failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div dangerouslySetInnerHTML={{ __html: "<main class=\"w-full min-h-screen bg-surface flex items-center justify-center px-gutter py-space-xl\"><div class=\"flex flex-col w-full items-center justify-center relative overflow-hidden py-space-xl\">\n<!-- Subtle Ambient Telemetry Topology Canvas Background -->\n<div class=\"absolute inset-0 pointer-events-none flex items-center justify-center\">\n<div class=\"absolute w-[800px] h-[800px] rounded-full bg-primary/5 blur-[120px] -top-40 -left-20\"></div>\n<div class=\"absolute w-[600px] h-[600px] rounded-full bg-secondary/5 blur-[140px] bottom-0 right-0\"></div>\n<svg class=\"w-full h-full opacity-20 stroke-outline-variant\" height=\"100%\" width=\"100%\" xmlns=\"http://www.w3.org/2000/svg\">\n<defs>\n<pattern height=\"48\" id=\"grid-pattern\" patternunits=\"userSpaceOnUse\" width=\"48\">\n<path d=\"M 48 0 L 0 0 0 48\" fill=\"none\" stroke=\"currentColor\" stroke-dasharray=\"1 7\" stroke-width=\"0.75\"></path>\n<circle class=\"text-outline\" cx=\"0\" cy=\"0\" fill=\"currentColor\" r=\"1.5\"></circle>\n</pattern>\n</defs>\n<rect fill=\"url(#grid-pattern)\" height=\"100%\" width=\"100%\"></rect>\n<!-- Simulated Constellation Trace Lines -->\n<g class=\"text-secondary/40\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1\">\n<path d=\"M 120 180 L 260 220 L 340 140 L 520 200\" stroke-dasharray=\"4 4\"></path>\n<circle class=\"fill-secondary animate-pulse\" cx=\"260\" cy=\"220\" r=\"3\"></circle>\n<circle class=\"fill-surface-tint\" cx=\"340\" cy=\"140\" r=\"2.5\"></circle>\n</g>\n<g class=\"text-tertiary/30\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1\">\n<path d=\"M 780 400 L 920 360 L 1040 440 L 1180 390\" stroke-dasharray=\"6 3\"></path>\n<circle class=\"fill-tertiary\" cx=\"920\" cy=\"360\" r=\"3\"></circle>\n<circle class=\"fill-primary\" cx=\"1040\" cy=\"440\" r=\"2\"></circle>\n</g>\n</svg>\n</div>\n<!-- Main Auth Container Container -->\n<div class=\"relative w-full max-w-[490px] mx-auto z-10 flex flex-col items-center\">\n<!-- Platform Brand Header -->\n<div class=\"flex flex-col items-center mb-space-lg text-center\">\n<div class=\"flex items-center gap-space-xs px-space-md py-space-xs rounded-full bg-surface-container-high shadow-sm mb-space-md\">\n<span class=\"w-2 h-2 rounded-full bg-tertiary animate-ping\"></span>\n<span class=\"font-label-code-sm text-label-code-sm text-on-surface-variant uppercase tracking-wider\">Cloud-Native Reliability &amp; Task Platform</span>\n</div>\n<div class=\"flex items-center gap-space-sm mb-space-xs\">\n<div class=\"w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20\">\n<span class=\"material-symbols-outlined text-on-primary text-[24px]\">network_intelligence</span>\n</div>\n<span class=\"font-headline-xl text-headline-xl text-on-surface tracking-tight\">HealOps</span>\n</div>\n<p class=\"font-body-sm text-body-sm text-on-surface-variant max-w-xs\">Autonomous incident triage, live telemetry reconciliation, and cluster control plane.</p>\n</div>\n<!-- Glassmorphic Auth Card -->\n<div class=\"w-full bg-surface-container-low/90 backdrop-blur-xl rounded-xl shadow-2xl p-space-xl flex flex-col gap-space-lg relative\">\n<!-- Tab Switcher -->\n<div class=\"flex p-space-xs rounded-lg bg-surface-container-lowest gap-space-xs\" id=\"auth-tab-group\" role=\"tablist\">\n<button class=\"flex-1 py-space-xs px-space-sm rounded-lg font-label-code-md text-label-code-md transition-all duration-200 text-center flex items-center justify-center gap-space-xs bg-surface-container-high text-on-surface shadow-sm\" id=\"tab-signin\" onclick=\"switchAuthTab('signin')\" type=\"button\">\n<span class=\"material-symbols-outlined text-[16px]\">login</span>\n<span>Sign In</span>\n</button>\n<button class=\"flex-1 py-space-xs px-space-sm rounded-lg font-label-code-md text-label-code-md transition-all duration-200 text-center flex items-center justify-center gap-space-xs text-on-surface-variant hover:text-on-surface\" id=\"tab-signup\" onclick=\"switchAuthTab('signup')\" type=\"button\">\n<span class=\"material-symbols-outlined text-[16px]\">domain_add</span>\n<span>Create Workspace</span>\n</button>\n</div>\n<!-- Identity Providers (SSO Stack) -->\n<div class=\"flex flex-col gap-space-sm\">\n<button class=\"w-full h-9 px-space-md rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-body-md text-body-md transition-all flex items-center justify-center gap-space-sm shadow-sm group\" type=\"button\">\n<svg class=\"w-4 h-4 fill-current text-on-surface group-hover:text-primary transition-colors\" viewbox=\"0 0 24 24\">\n<path clip-rule=\"evenodd\" d=\"M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z\" fill-rule=\"evenodd\"></path>\n</svg>\n<span class=\"font-label-code-md text-label-code-md\">Continue with GitHub Enterprise</span>\n</button>\n<div class=\"grid grid-cols-2 gap-space-sm\">\n<button class=\"h-9 px-space-sm rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-body-md text-body-md transition-all flex items-center justify-center gap-space-xs shadow-sm\" type=\"button\">\n<span class=\"material-symbols-outlined text-[18px] text-secondary\">security</span>\n<span class=\"font-label-code-md text-label-code-md\">Okta / SAML SSO</span>\n</button>\n<button class=\"h-9 px-space-sm rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-body-md text-body-md transition-all flex items-center justify-center gap-space-xs shadow-sm\" type=\"button\">\n<svg class=\"w-3.5 h-3.5\" viewbox=\"0 0 24 24\">\n<path d=\"M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z\" fill=\"#4285F4\"></path>\n<path d=\"M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z\" fill=\"#34A853\"></path>\n<path d=\"M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z\" fill=\"#FBBC05\"></path>\n<path d=\"M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z\" fill=\"#EA4335\"></path>\n</svg>\n<span class=\"font-label-code-md text-label-code-md\">Google Workspace</span>\n</button>\n</div>\n</div>\n<!-- Segment Divider -->\n<div class=\"relative flex items-center justify-center\">\n<div class=\"w-full h-px bg-surface-container-highest\"></div>\n<span class=\"absolute bg-surface-container-low px-space-sm font-label-code-sm text-label-code-sm text-outline uppercase tracking-widest\">or credentials</span>\n</div>\n<!-- Credential Form -->\n<form class=\"flex flex-col gap-space-md\" onsubmit=\"event.preventDefault(); triggerAuthSim();\">\n<!-- Workspace Name (Signup Exclusive, Hidden on SignIn) -->\n<div class=\"hidden flex-col gap-space-xs\" id=\"field-workspace\">\n<label class=\"font-label-code-md text-label-code-md text-on-surface-variant flex items-center justify-between\" for=\"input-workspace\">\n<span>WORKSPACE SLUG</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline\">healops.io/ws/[slug]</span>\n</label>\n<div class=\"relative flex items-center\">\n<input class=\"w-full h-9 bg-surface-container-lowest text-on-surface placeholder:text-outline font-label-code-md text-label-code-md px-space-md rounded-lg outline-none focus:bg-surface-container transition-all\" id=\"input-workspace\" placeholder=\"acme-corp-infra\" type=\"text\"/>\n<span class=\"material-symbols-outlined absolute right-space-sm text-outline text-[18px]\">dns</span>\n</div>\n</div>\n<!-- Work Email Field -->\n<div class=\"flex flex-col gap-space-xs\">\n<label class=\"font-label-code-md text-label-code-md text-on-surface-variant flex items-center justify-between\" for=\"input-email\">\n<span>WORK EMAIL</span>\n<span class=\"font-label-code-sm text-label-code-sm text-secondary\">CORPORATE DOMAIN REQUIRED</span>\n</label>\n<div class=\"relative flex items-center\">\n<input class=\"w-full h-9 bg-surface-container-lowest text-on-surface placeholder:text-outline font-label-code-md text-label-code-md px-space-md rounded-lg outline-none focus:bg-surface-container transition-all\" id=\"input-email\" placeholder=\"alex.chen@enterprise.io\" required=\"\" type=\"email\"/>\n<span class=\"material-symbols-outlined absolute right-space-sm text-outline text-[18px]\">alternate_email</span>\n</div>\n</div>\n<!-- Password Field -->\n<div class=\"flex flex-col gap-space-xs\">\n<div class=\"flex items-center justify-between\">\n<label class=\"font-label-code-md text-label-code-md text-on-surface-variant\" for=\"input-password\">CLUSTER PASSKEY / CIPHER</label>\n<a class=\"font-label-code-sm text-label-code-sm text-primary hover:underline\" href=\"#\">Forgot password?</a>\n</div>\n<div class=\"relative flex items-center\">\n<input class=\"w-full h-9 bg-surface-container-lowest text-on-surface placeholder:text-outline font-label-code-md text-label-code-md px-space-md pr-10 rounded-lg outline-none focus:bg-surface-container transition-all\" id=\"input-password\" placeholder=\"••••••••••••••••\" required=\"\" type=\"password\"/>\n<button class=\"absolute right-space-sm text-outline hover:text-on-surface flex items-center justify-center p-1\" onclick=\"togglePasswordVisibility()\" type=\"button\">\n<span class=\"material-symbols-outlined text-[18px]\" id=\"eye-icon\">visibility</span>\n</button>\n</div>\n</div>\n<!-- Device Trust Toggle -->\n<div class=\"flex items-center justify-between pt-space-xs\">\n<label class=\"flex items-center gap-space-xs cursor-pointer select-none\">\n<input checked=\"\" class=\"w-4 h-4 rounded bg-surface-container-lowest text-primary accent-primary cursor-pointer\" type=\"checkbox\"/>\n<span class=\"font-body-sm text-body-sm text-on-surface-variant\">Remember hardware fingerprint (30 days)</span>\n</label>\n<span class=\"font-label-code-sm text-label-code-sm text-tertiary flex items-center gap-1\">\n<span class=\"material-symbols-outlined text-[14px]\">verified_user</span>\n            mTLS Ready\n          </span>\n</div>\n<!-- Primary Action Remediate/Auth CTA -->\n<button class=\"w-full h-10 mt-space-xs rounded-lg bg-primary hover:bg-primary-container text-on-primary font-headline-md text-headline-md flex items-center justify-center gap-space-sm transition-all duration-200 shadow-lg shadow-primary/20 active:scale-[0.99] group\" id=\"submit-btn\" type=\"submit\">\n<span class=\"material-symbols-outlined text-[20px] group-hover:rotate-45 transition-transform duration-300\" id=\"btn-spinner\">hub</span>\n<span id=\"btn-text\">Sign In to Cluster Console</span>\n</button>\n</form>\n</div>\n<!-- Cluster Gateway Live Status Micro-Pill -->\n<div class=\"mt-space-lg flex items-center gap-space-xs px-space-md py-1 rounded-full bg-surface-container-low shadow-sm\">\n<span class=\"w-2 h-2 rounded-full bg-tertiary\"></span>\n<span class=\"font-label-code-sm text-label-code-sm text-on-surface-variant\">Auth Edge Gateway: <strong class=\"text-tertiary\">14ms latency</strong> (us-east-1a)</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline\">/</span>\n<span class=\"font-label-code-sm text-label-code-sm text-secondary\">Zero Incidents</span>\n</div>\n<!-- Security, Compliance & Enterprise Verification Strip -->\n<div class=\"mt-space-lg flex flex-wrap items-center justify-center gap-space-lg text-outline\">\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"material-symbols-outlined text-[16px]\">verified</span>\n<span class=\"font-label-code-sm text-label-code-sm uppercase tracking-wider\">SOC2 Type II Certified</span>\n</div>\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"material-symbols-outlined text-[16px]\">local_hospital</span>\n<span class=\"font-label-code-sm text-label-code-sm uppercase tracking-wider\">HIPAA Ready</span>\n</div>\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"material-symbols-outlined text-[16px]\">lock</span>\n<span class=\"font-label-code-sm text-label-code-sm uppercase tracking-wider\">AES-256 E2E Encrypted</span>\n</div>\n</div>\n</div>\n<!-- Interactive Logic Hook -->\n<script>\n    function togglePasswordVisibility() {\n      const pwd = document.getElementById('input-password');\n      const icon = document.getElementById('eye-icon');\n      if (pwd.type === 'password') {\n        pwd.type = 'text';\n        icon.textContent = 'visibility_off';\n      } else {\n        pwd.type = 'password';\n        icon.textContent = 'visibility';\n      }\n    }\n\n    function switchAuthTab(mode) {\n      const tabSignIn = document.getElementById('tab-signin');\n      const tabSignUp = document.getElementById('tab-signup');\n      const wsField = document.getElementById('field-workspace');\n      const btnText = document.getElementById('btn-text');\n\n      if (mode === 'signup') {\n        tabSignUp.className = \"flex-1 py-space-xs px-space-sm rounded-lg font-label-code-md text-label-code-md transition-all duration-200 text-center flex items-center justify-center gap-space-xs bg-surface-container-high text-on-surface shadow-sm\";\n        tabSignIn.className = \"flex-1 py-space-xs px-space-sm rounded-lg font-label-code-md text-label-code-md transition-all duration-200 text-center flex items-center justify-center gap-space-xs text-on-surface-variant hover:text-on-surface\";\n        wsField.classList.remove('hidden');\n        wsField.classList.add('flex');\n        btnText.textContent = 'Create Reliability Workspace';\n      } else {\n        tabSignIn.className = \"flex-1 py-space-xs px-space-sm rounded-lg font-label-code-md text-label-code-md transition-all duration-200 text-center flex items-center justify-center gap-space-xs bg-surface-container-high text-on-surface shadow-sm\";\n        tabSignUp.className = \"flex-1 py-space-xs px-space-sm rounded-lg font-label-code-md text-label-code-md transition-all duration-200 text-center flex items-center justify-center gap-space-xs text-on-surface-variant hover:text-on-surface\";\n        wsField.classList.add('hidden');\n        wsField.classList.remove('flex');\n        btnText.textContent = 'Sign In to Cluster Console';\n      }\n    }\n\n    function triggerAuthSim() {\n      const spinner = document.getElementById('btn-spinner');\n      const btnText = document.getElementById('btn-text');\n      const prevIcon = spinner.textContent;\n      const prevLabel = btnText.textContent;\n      \n      spinner.textContent = 'sync';\n      spinner.classList.add('animate-spin');\n      btnText.textContent = 'Validating Session Credentials...';\n\n      setTimeout(() => {\n        spinner.textContent = 'check_circle';\n        spinner.classList.remove('animate-spin');\n        btnText.textContent = 'Session Verified — Connecting...';\n        setTimeout(() => {\n          spinner.textContent = prevIcon;\n          btnText.textContent = prevLabel;\n        }, 1500);\n      }, 1200);\n    }\n  </script>\n</div></main>" }} />
+    <main className="w-full min-h-screen bg-surface flex items-center justify-center px-gutter py-space-xl">
+      <div className="flex flex-col w-full items-center justify-center relative overflow-hidden py-space-xl">
+        {/* Subtle Ambient Telemetry Topology Canvas Background */}
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+          <div className="absolute w-[800px] h-[800px] rounded-full bg-primary/5 blur-[120px] -top-40 -left-20"></div>
+          <div className="absolute w-[600px] h-[600px] rounded-full bg-secondary/5 blur-[140px] bottom-0 right-0"></div>
+          <svg className="w-full h-full opacity-20 stroke-outline-variant" height="100%" width="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern height="48" id="grid-pattern" patternUnits="userSpaceOnUse" width="48">
+                <path d="M 48 0 L 0 0 0 48" fill="none" stroke="currentColor" strokeDasharray="1 7" strokeWidth="0.75"></path>
+                <circle className="text-outline" cx="0" cy="0" fill="currentColor" r="1.5"></circle>
+              </pattern>
+            </defs>
+            <rect fill="url(#grid-pattern)" height="100%" width="100%"></rect>
+            {/* Simulated Constellation Trace Lines */}
+            <g className="text-secondary/40" fill="none" stroke="currentColor" strokeWidth="1">
+              <path d="M 120 180 L 260 220 L 340 140 L 520 200" strokeDasharray="4 4"></path>
+              <circle className="fill-secondary animate-pulse" cx="260" cy="220" r="3"></circle>
+              <circle className="fill-surface-tint" cx="340" cy="140" r="2.5"></circle>
+            </g>
+            <g className="text-tertiary/30" fill="none" stroke="currentColor" strokeWidth="1">
+              <path d="M 780 400 L 920 360 L 1040 440 L 1180 390" strokeDasharray="6 3"></path>
+              <circle className="fill-tertiary" cx="920" cy="360" r="3"></circle>
+              <circle className="fill-primary" cx="1040" cy="440" r="2"></circle>
+            </g>
+          </svg>
+        </div>
+
+        {/* Main Auth Container Container */}
+        <div className="relative w-full max-w-[490px] mx-auto z-10 flex flex-col items-center">
+          {/* Platform Brand Header */}
+          <div className="flex flex-col items-center mb-space-lg text-center">
+            <div className="flex items-center gap-space-xs px-space-md py-space-xs rounded-full bg-surface-container-high shadow-sm mb-space-md">
+              <span className="w-2 h-2 rounded-full bg-tertiary animate-ping"></span>
+              <span className="font-label-code-sm text-label-code-sm text-on-surface-variant uppercase tracking-wider">Cloud-Native Reliability & Task Platform</span>
+            </div>
+            <div className="flex items-center gap-space-sm mb-space-xs">
+              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+                <span className="material-symbols-outlined text-on-primary text-[24px]">network_intelligence</span>
+              </div>
+              <span className="font-headline-xl text-headline-xl text-on-surface tracking-tight">HealOps</span>
+            </div>
+            <p className="font-body-sm text-body-sm text-on-surface-variant max-w-xs">Autonomous incident triage, live telemetry reconciliation, and cluster control plane.</p>
+          </div>
+
+          {/* Glassmorphic Auth Card */}
+          <div className="w-full bg-surface-container-low/90 backdrop-blur-xl rounded-xl shadow-2xl p-space-xl flex flex-col gap-space-lg relative">
+            {/* Tab Switcher */}
+            <div className="flex p-space-xs rounded-lg bg-surface-container-lowest gap-space-xs" role="tablist">
+              <button
+                className={`flex-1 py-space-xs px-space-sm rounded-lg font-label-code-md text-label-code-md transition-all duration-200 text-center flex items-center justify-center gap-space-xs ${isLogin ? 'bg-surface-container-high text-on-surface shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+                onClick={() => setIsLogin(true)}
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[16px]">login</span>
+                <span>Sign In</span>
+              </button>
+              <button
+                className={`flex-1 py-space-xs px-space-sm rounded-lg font-label-code-md text-label-code-md transition-all duration-200 text-center flex items-center justify-center gap-space-xs ${!isLogin ? 'bg-surface-container-high text-on-surface shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+                onClick={() => setIsLogin(false)}
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[16px]">domain_add</span>
+                <span>Create Workspace</span>
+              </button>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-error-container text-error px-4 py-2 rounded-lg font-body-sm flex justify-between items-center">
+                <span>{error}</span>
+                <button onClick={() => setError('')}><span className="material-symbols-outlined text-[16px]">close</span></button>
+              </div>
+            )}
+
+            {/* Credential Form */}
+            <form className="flex flex-col gap-space-md" onSubmit={handleSubmit}>
+              {!isLogin && (
+                <div className="flex flex-col gap-space-xs">
+                  <label className="font-label-code-md text-label-code-md text-on-surface-variant flex items-center justify-between" htmlFor="input-name">
+                    <span>FULL NAME</span>
+                  </label>
+                  <div className="relative flex items-center">
+                    <input
+                      className="w-full h-9 bg-surface-container-lowest text-on-surface placeholder:text-outline font-label-code-md text-label-code-md px-space-md rounded-lg outline-none focus:bg-surface-container transition-all"
+                      id="input-name"
+                      placeholder="Alex Chen"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required={!isLogin}
+                    />
+                    <span className="material-symbols-outlined absolute right-space-sm text-outline text-[18px]">person</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-space-xs">
+                <label className="font-label-code-md text-label-code-md text-on-surface-variant flex items-center justify-between" htmlFor="input-email">
+                  <span>WORK EMAIL</span>
+                  <span className="font-label-code-sm text-label-code-sm text-secondary">CORPORATE DOMAIN REQUIRED</span>
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    className="w-full h-9 bg-surface-container-lowest text-on-surface placeholder:text-outline font-label-code-md text-label-code-md px-space-md rounded-lg outline-none focus:bg-surface-container transition-all"
+                    id="input-email"
+                    placeholder="alex.chen@enterprise.io"
+                    required
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                  <span className="material-symbols-outlined absolute right-space-sm text-outline text-[18px]">alternate_email</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-space-xs">
+                <div className="flex items-center justify-between">
+                  <label className="font-label-code-md text-label-code-md text-on-surface-variant" htmlFor="input-password">CLUSTER PASSKEY / CIPHER</label>
+                  {isLogin && <a className="font-label-code-sm text-label-code-sm text-primary hover:underline" href="#">Forgot password?</a>}
+                </div>
+                <div className="relative flex items-center">
+                  <input
+                    className="w-full h-9 bg-surface-container-lowest text-on-surface placeholder:text-outline font-label-code-md text-label-code-md px-space-md pr-10 rounded-lg outline-none focus:bg-surface-container transition-all"
+                    id="input-password"
+                    placeholder="••••••••••••••••"
+                    required
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <button
+                    className="absolute right-space-sm text-outline hover:text-on-surface flex items-center justify-center p-1"
+                    onClick={() => setShowPassword(!showPassword)}
+                    type="button"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {showPassword ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <button
+                className="w-full h-10 mt-space-xs rounded-lg bg-primary hover:bg-primary-container text-on-primary font-headline-md text-headline-md flex items-center justify-center gap-space-sm transition-all duration-200 shadow-lg shadow-primary/20 active:scale-[0.99] group disabled:opacity-70"
+                type="submit"
+                disabled={isSubmitting}
+              >
+                <span className={`material-symbols-outlined text-[20px] ${isSubmitting ? 'animate-spin' : 'group-hover:rotate-45 transition-transform duration-300'}`}>
+                  {isSubmitting ? 'sync' : 'hub'}
+                </span>
+                <span>{isSubmitting ? 'Connecting...' : isLogin ? 'Sign In to Cluster Console' : 'Create Reliability Workspace'}</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }

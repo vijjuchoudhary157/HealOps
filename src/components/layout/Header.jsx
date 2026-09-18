@@ -1,4 +1,15 @@
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+
 export default function Header() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl z-50 flex items-center justify-between px-margin shadow-[0_1px_8px_rgba(0,0,0,0.4)]">
       <div className="flex items-center gap-space-md">
@@ -15,7 +26,7 @@ export default function Header() {
         <span className="px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm bg-error-container/30 text-error">PRODUCTION</span>
         <div className="hidden sm:inline-flex items-center gap-1.5 px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container border border-outline-variant/40 text-on-surface-variant">
           <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-          <span className="">DEMO MODE • Simulated Telemetry &amp; Mock Pipeline</span>
+          <span className="">Live Backend Connected</span>
         </div>
         <div className="hidden xl:flex items-center gap-2 px-space-sm py-1 rounded bg-tertiary-container/20 shadow-[0_0_8px_1px_rgba(78,222,163,0.15)]">
           <span className="relative flex h-2 w-2">
@@ -41,9 +52,16 @@ export default function Header() {
         <div className="flex items-center gap-space-sm pl-space-xs">
           <img alt="Profile" className="w-8 h-8 rounded-full object-cover ring-1 ring-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjAD7wTE9GvegzVGJpIkzgtl9QIbyImYowwmBmQ9Mo5ITKPrOpPfAJ_BToPdQ0r79Uhke13_7oRQuVliqc6YtpdfnQ1bMPJorCU_zc5zc0Cj0KhE_JZhw1Ha_QIO_oWDYzIHT2Gn1z-QVxcUxe61a717kyoNhg-FR0cKF73zj9pV4KlAaQ8USraqpd4K_8OY7o0nChhylkh5AeaDG7xxM_O50UyLyNSbpeMbFnutx1DEP0-BFOLIpc" />
           <div className="hidden md:flex flex-col">
-            <span className="font-body-sm text-body-sm font-medium text-on-surface leading-none">Alex Vance</span>
-            <span className="font-label-code-sm text-label-code-sm text-on-surface-variant leading-none mt-1">Lead SRE &amp; Platform Eng</span>
+            <span className="font-body-sm text-body-sm font-medium text-on-surface leading-none">{user?.username || 'User'}</span>
+            <span className="font-label-code-sm text-label-code-sm text-on-surface-variant leading-none mt-1">{user?.email || 'admin'}</span>
           </div>
+          <button 
+            onClick={handleLogout}
+            className="ml-2 p-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-error transition-colors"
+            title="Sign Out"
+          >
+            <span className="material-symbols-outlined text-[18px]">logout</span>
+          </button>
         </div>
       </div>
     </header>
