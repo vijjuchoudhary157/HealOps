@@ -152,7 +152,7 @@
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData).to.have.property(\"token\");",
                   "    pm.expect(jsonData.token).to.be.a(\"string\").and.to.not.be.empty;",
-                  "    pm.collectionVariables.set(\"authToken\", jsonData.token);",
+                  "    pm.variables.set(\"authToken\", jsonData.token);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -331,7 +331,7 @@
               "script": {
                 "exec": [
                   "pm.test(\"Token is present before request\", function () {",
-                  "    pm.expect(pm.collectionVariables.get(\"authToken\")).to.be.a(\"string\").and.to.not.be.empty;",
+                  "    pm.expect(pm.variables.get(\"authToken\")).to.be.a(\"string\").and.to.not.be.empty;",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -379,7 +379,7 @@
               "script": {
                 "exec": [
                   "pm.test(\"Token is present before request\", function () {",
-                  "    pm.expect(pm.collectionVariables.get(\"authToken\")).to.be.a(\"string\").and.to.not.be.empty;",
+                  "    pm.expect(pm.variables.get(\"authToken\")).to.be.a(\"string\").and.to.not.be.empty;",
                   "});"
                 ],
                 "type": "text/javascript"
