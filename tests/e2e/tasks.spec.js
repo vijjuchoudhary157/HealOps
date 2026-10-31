@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const getTestEmail = () => `e2e.test.${Date.now()}@example.com`;
+const getTestEmail = () => `e2e.test.${Date.now()}.${Math.floor(Math.random() * 100000)}@example.com`;
 const TEST_PASSWORD = 'password123!';
 
 test.describe('Task Management', () => {
