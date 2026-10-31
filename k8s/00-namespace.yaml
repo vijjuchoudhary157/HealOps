@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: healops
+  labels:
+    app.kubernetes.io/name: healops
+    app.kubernetes.io/part-of: healops

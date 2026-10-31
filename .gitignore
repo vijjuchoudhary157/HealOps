@@ -5,3 +5,7 @@ playwright-report/
 test-results/
 playwright-report/
 test-results/
+
+# Kubernetes secrets - keep credentials out of Git
+k8s/01-postgres-secret.yaml
+k8s/06-backend-secret.yaml

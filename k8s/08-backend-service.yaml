@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: healops-backend
+  namespace: healops
+  labels:
+    app.kubernetes.io/name: healops-backend
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: healops
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+  selector:
+    app: healops-backend
