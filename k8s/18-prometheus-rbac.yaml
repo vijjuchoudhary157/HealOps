@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: healops-prometheus
+  namespace: healops
+  labels:
+    app.kubernetes.io/name: healops-prometheus
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: healops
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: healops-prometheus
+  labels:
+    app.kubernetes.io/name: healops-prometheus
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: healops
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes/metrics
+    verbs: ["get"]
+  - nonResourceURLs:
+      - /metrics/cadvisor
+      - /metrics
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: healops-prometheus
+  labels:
+    app.kubernetes.io/name: healops-prometheus
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: healops
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: healops-prometheus
+subjects:
+  - kind: ServiceAccount
+    name: healops-prometheus
+    namespace: healops

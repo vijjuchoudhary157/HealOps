@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: healops
+  labels:
+    app.kubernetes.io/name: healops-prometheus
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: healops
+data:
+  kubelet-ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIIDBTCCAe2gAwIBAgIIUY+tTCu/DsIwDQYJKoZIhvcNAQELBQAwFTETMBEGA1UE
+    AxMKa3ViZXJuZXRlczAeFw0yNjEwMjkwNTU4MThaFw0zNjEwMjYwNjAzMThaMBUx
+    EzARBgNVBAMTCmt1YmVybmV0ZXMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+    AoIBAQCcoVBHXbx9yvOCi5PafpLgzfg2iTggzLYUJA2thjGyaoxjesgAlKKVC00s
+    s9vrIkUFpqY5zV8CD8iGHRswcXO1iY46XiyCD0xeL8LXY8pj3s+OgzfdKhdWImNs
+    L7Rn9UQ40NgJBDXMInVtxbzHIcgDyWkrY5wnvoe3PdUGNovt95g1hJjRg/BvvFl2
+    xROgbf8c2FDprRrpf2ki0F8/xOvtW4hh4VvGyw83KtX6956vRtQ5/KUix6VfxA/B
+    OK1b2HBo/huXtADWJffVUTGigdTo8uwdseCDY3WwVpPUKLDERPBCM4NmO0B61elQ
+    c1MX6k0KvyGCa4XDr15bfHz3LNXxAgMBAAGjWTBXMA4GA1UdDwEB/wQEAwICpDAP
+    BgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBTj1bbpH/oTGa1wXbselo465/vT7DAV
+    BgNVHREEDjAMggprdWJlcm5ldGVzMA0GCSqGSIb3DQEBCwUAA4IBAQAHi3ecfVh+
+    UZcScyzcldlgpAjFbcxHLMxAiu8CiHJ75cpJBWcw6IrVtKkCyJz167Mg9jsn9H5I
+    lkasYjtahF9TNKMEIkWiHfTXrI46BzaExdlqRJ9ScBAXFs2iBCtizZNwfnlr40Ff
+    2puKE7kzhvcJ64OM3TnZphWg1RcZIwuDAshdlsfqCzV4SgLIf7ObPDzy1yA2KA4J
+    prk5xLNW1Bqod7APi15twjmJfbwAK32UarXPxr/lljG6VHxbcjSJAESpKiiM2ZmH
+    yMxwiYin0CFGtKkuiH4+kLAQGXQLa4uyFgb/anLVHjS0c2t7X8jL42GWCnZCLCz3
+    RYYYuGsU1Mo6
+    -----END CERTIFICATE-----
+    -----BEGIN CERTIFICATE-----
+    MIIDIDCCAgigAwIBAgIIOFi5eyv9/RIwDQYJKoZIhvcNAQELBQAwLjEsMCoGA1UE
+    AwwjZGVza3RvcC1jb250cm9sLXBsYW5lLWNhQDE3OTMyNTM3OTkwHhcNMjYxMDI5
+    MDUwMzE5WhcNMjcxMDI5MDUwMzE5WjAuMSwwKgYDVQQDDCNkZXNrdG9wLWNvbnRy
+    b2wtcGxhbmUtY2FAMTc5MzI1Mzc5OTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCC
+    AQoCggEBALOdAWMYVcUi+wSbSj3JYdHW/YSxUjkAKhzWCq9wXv8geyyTwz6khI8L
+    iVXpSxHdhT6q2zo2AO8SkJLSuv3rOUMLA9tPOvgKZiYne4+8r2HzmFDH1Ek+hnb8
+    tiA63QXuhoNd1LE5rcoDLQCSq6zS4Ffo8YOz3EyLHWl5tZhjwIpRVG1vQe8MQd5c
+    jPUPT9r4QBU3B4GXaLWOym7sxPi1r3OVxqOc/7PmX5q6J+nd+/xxdc3NrgCusVUv
+    fegKeGrAtWPqEA5SKXDa/4wM0nauMmX0KDvpoJI6gkU9jBMCN1NFS8q1BXItQV2j
+    J6y7OH9u5z8Z+LessFKqKCsX6krERGkCAwEAAaNCMEAwDgYDVR0PAQH/BAQDAgKk
+    MA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFHTXh7NIooN56JkIbLJwmahDq6hz
+    MA0GCSqGSIb3DQEBCwUAA4IBAQCmF9YvLk1MGtknMPLFqM5SDwCNXprlPKVCAUbl
+    HwQHq26qtTSgaQMV+YElpC7qTlaCXOJkBFbeopHrTYb26pewfExHVTIWyujQJWNO
+    Rm2X+KNZY3MPv2atr24aJMqHMJJOl/lbqdLTGkLI6SWNnr68hQ9z6ByAHlfS8uWi
+    AMySZjhxemgI+FFsl9Zz/IQJyRSpzduuN0oBGN1Z3LP+dTGrmd0Uhi2+C5sYlLcT
+    8ntTnqE+rz581ibJBIEpwBBqtcX1VjH/xJxdmtyt6VgRDRYrOuzdFh4pVzJLhjJR
+    hOA2Ohi3l7Bh+uT6sbXHGnI5YyAU9p3M6E7ftUk8mOXdme/e
+    -----END CERTIFICATE-----
+  prometheus.yml: |
+    global:
+      scrape_interval: 10s
+      evaluation_interval: 10s
+
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      - job_name: 'healops-backend'
+        metrics_path: '/metrics'
+        scrape_interval: 5s
+        static_configs:
+          - targets: ['healops-backend.healops.svc.cluster.local:5000']
+            labels:
+              app: 'healops-backend'
+              environment: 'production-k8s'
+
+      - job_name: 'kubernetes-cadvisor'
+        scheme: https
+        metrics_path: '/metrics/cadvisor'
+        scrape_interval: 10s
+        scrape_timeout: 10s
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        tls_config:
+          ca_file: /etc/prometheus/kubelet-ca.crt
+          server_name: desktop-control-plane
+          insecure_skip_verify: false
+        static_configs:
+          - targets: ['desktop-control-plane:10250']
+            labels:
+              node: 'desktop-control-plane'
+        metric_relabel_configs:
+          - source_labels: [namespace]
+            action: keep
+            regex: healops
+          - source_labels: [container]
+            action: drop
+            regex: ''
+          - source_labels: [__name__]
+            action: keep
+            regex: 'container_cpu_usage_seconds_total|container_memory_working_set_bytes|container_memory_usage_bytes|container_cpu_cfs_periods_total|container_cpu_cfs_throttled_periods_total|container_cpu_cfs_throttled_seconds_total|container_spec_cpu_quota|container_spec_cpu_period|container_spec_memory_limit_bytes'
+
+      - job_name: 'kube-state-metrics'
+        scrape_interval: 10s
+        scrape_timeout: 10s
+        static_configs:
+          - targets: ['healops-kube-state-metrics.healops.svc.cluster.local:8080']
+            labels:
+              app: 'healops-kube-state-metrics'
+        metric_relabel_configs:
+          - source_labels: [namespace]
+            action: keep
+            regex: healops
+          - source_labels: [__name__]
+            action: keep
+            regex: 'kube_pod_container_status_restarts_total|kube_pod_container_status_last_terminated_reason|kube_pod_status_phase|kube_pod_container_status_waiting_reason|kube_pod_container_info|kube_deployment_spec_replicas|kube_deployment_status_replicas_available|kube_deployment_status_replicas_unavailable|kube_deployment_status_replicas_updated|kube_deployment_status_replicas'
