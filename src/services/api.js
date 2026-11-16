@@ -144,3 +144,14 @@ export const remediationAPI = {
   getById: (id) =>
     fetchWithAuth(`/remediations/${id}`, { method: 'GET' }),
 };
+
+export const systemAPI = {
+  getStatus: () =>
+    fetchWithAuth('/system/status', { method: 'GET' }),
+
+  getHealth: () =>
+    fetch('/health').then(res => res.json()),
+
+  getReady: () =>
+    fetch('/ready').then(res => res.json()),
+};

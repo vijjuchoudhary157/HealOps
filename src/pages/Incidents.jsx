@@ -425,7 +425,7 @@ export default function Incidents() {
                           )}
                           <button
                             className="p-1 hover:bg-surface-container rounded text-primary hover:text-primary-container transition-colors"
-                            title="Inspect Details &amp; Timeline"
+                            title="Inspect Details & Timeline"
                             onClick={() => openDetailsModal(inc.id)}
                           >
                             <span className="material-symbols-outlined text-[18px]">timeline</span>

@@ -22,6 +22,7 @@ app.use(metricsMiddleware);
 
 // Routes
 app.use('/', sysRoutes);
+app.use('/api/system', sysRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/incidents', incidentsRoutes);

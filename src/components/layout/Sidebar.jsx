@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import { incidentsAPI } from '../../services/api';
 
 export default function Sidebar() {
   const [healthStatus, setHealthStatus] = useState({ backend: 'checking', db: 'checking' });
+  const [firingCount, setFiringCount] = useState(null);
+  const [environment, setEnvironment] = useState('Detecting...');
 
   useEffect(() => {
     let isMounted = true;
-    const fetchHealth = async () => {
+
+    const fetchHealthAndStats = async () => {
+      // 1. Check /ready
       try {
         const res = await fetch('/ready');
         if (res.ok) {
@@ -23,10 +28,36 @@ export default function Sidebar() {
       } catch {
         if (isMounted) setHealthStatus({ backend: 'offline', db: 'unknown' });
       }
+
+      // 2. Fetch active incident count
+      try {
+        const stats = await incidentsAPI.getStats();
+        if (isMounted && stats?.by_status) {
+          setFiringCount(stats.by_status.firing ?? 0);
+        }
+      } catch {
+        // Leave previous count or null
+      }
+
+      // 3. Fetch system status for environment detection
+      try {
+        const res = await fetch('/api/system/status');
+        if (res.ok) {
+          const sysData = await res.json();
+          if (isMounted) {
+            setEnvironment(sysData.environment === 'kubernetes' ? 'Kubernetes Cluster' : 'Docker Compose');
+          }
+        }
+      } catch {
+        // Fallback default
+        if (isMounted && environment === 'Detecting...') {
+          setEnvironment('Docker Compose');
+        }
+      }
     };
 
-    fetchHealth();
-    const timer = setInterval(fetchHealth, 10000);
+    fetchHealthAndStats();
+    const timer = setInterval(fetchHealthAndStats, 10000);
     return () => {
       isMounted = false;
       clearInterval(timer);
@@ -39,7 +70,13 @@ export default function Sidebar() {
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
     { name: 'Tasks', path: '/tasks', icon: 'check_box' },
     { name: 'Test Results', path: '/test-results', icon: 'science' },
-    { name: 'Incidents', path: '/incidents', icon: 'warning', badge: '2', badgeColor: 'bg-error-container text-on-error-container' },
+    {
+      name: 'Incidents',
+      path: '/incidents',
+      icon: 'warning',
+      badge: firingCount !== null && firingCount > 0 ? String(firingCount) : null,
+      badgeColor: 'bg-error-container text-on-error-container'
+    },
     { name: 'AI Analysis', path: '/ai-analysis', icon: 'psychology', badge: 'AI', badgeColor: 'bg-secondary-container/20 text-secondary' },
     { name: 'System Health', path: '/system-health', icon: 'pulse_alert' },
     { name: 'Settings', path: '/settings', icon: 'settings' },
@@ -91,7 +128,7 @@ export default function Sidebar() {
         </div>
         <div className="flex items-center justify-between pt-1">
           <span className="font-label-code-sm text-label-code-sm text-on-surface-variant">Environment</span>
-          <span className="font-label-code-sm text-label-code-sm text-secondary font-semibold">Docker Compose</span>
+          <span className="font-label-code-sm text-label-code-sm text-secondary font-semibold">{environment}</span>
         </div>
         <div className="pt-2 mt-1 flex items-center justify-between text-[11px] font-label-code-sm">
           <span className="text-outline">Health Probe</span>

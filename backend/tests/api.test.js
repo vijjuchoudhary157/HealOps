@@ -35,6 +35,15 @@ describe('System Endpoints', () => {
     expect(res.statusCode).toEqual(200);
     expect(res.text).toContain('http_requests_total');
   });
+
+  it('GET /status should return system status including services and environment', async () => {
+    const res = await request(app).get('/status');
+    expect(res.statusCode).toEqual(200);
+    expect(res.body).toHaveProperty('environment');
+    expect(res.body).toHaveProperty('services');
+    expect(res.body.services.backend.status).toBe('healthy');
+    expect(res.body.services.database.status).toBe('connected');
+  });
 });
 
 describe('Authentication & Tasks Flow', () => {

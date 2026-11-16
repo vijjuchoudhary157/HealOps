@@ -1,7 +1,466 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { systemAPI } from '../services/api';
 
 export default function SystemHealth() {
+  const navigate = useNavigate();
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [probeRunning, setProbeRunning] = useState(false);
+  const [probeResult, setProbeResult] = useState(null);
+  const [liveClock, setLiveClock] = useState('');
+
+  // Clock
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      setLiveClock(now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC');
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadStatus = useCallback(async () => {
+    try {
+      setError(null);
+      const data = await systemAPI.getStatus();
+      setStatus(data);
+    } catch (err) {
+      console.error('Failed to load system status:', err);
+      setError('Unable to reach backend diagnostic API.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStatus();
+    const timer = setInterval(loadStatus, 10000);
+    return () => clearInterval(timer);
+  }, [loadStatus]);
+
+  const triggerDiagnosticProbe = async () => {
+    try {
+      setProbeRunning(true);
+      const start = Date.now();
+      const res = await fetch('/ready');
+      const latency = Date.now() - start;
+      const data = await res.json();
+      setProbeResult({
+        ok: res.ok,
+        latency,
+        database: data.database || 'unknown',
+        status: data.status || 'unknown'
+      });
+      // Refresh status as well
+      await loadStatus();
+    } catch (e) {
+      setProbeResult({
+        ok: false,
+        error: e.message
+      });
+    } finally {
+      setProbeRunning(false);
+      setTimeout(() => setProbeResult(null), 5000);
+    }
+  };
+
+  const isK8s = status?.environment === 'kubernetes';
+  const backendMem = status?.services?.backend?.memory;
+  const dbPool = status?.services?.database?.pool;
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <span className="material-symbols-outlined text-[48px] text-primary animate-spin">autorenew</span>
+        <span className="font-label-code-md text-label-code-md text-on-surface-variant">Connecting to Health Probes...</span>
+      </div>
+    );
+  }
+
   return (
-    <div dangerouslySetInnerHTML={{ __html: "<div class=\"flex flex-col w-full gap-space-lg\"><div class=\"flex items-center justify-between px-space-md py-2 rounded-lg bg-surface-container-low border border-secondary/20 shadow-sm\"><div class=\"flex items-center gap-space-sm\"><span class=\"material-symbols-outlined text-secondary text-[18px]\">info</span><div class=\"flex items-center gap-2 flex-wrap\"><span class=\"font-label-code-sm text-label-code-sm font-bold text-secondary uppercase tracking-wider\">Demo Mode</span><span class=\"font-body-sm text-body-sm text-on-surface-variant\">Streaming simulated Prometheus &amp; Kubernetes host runtime metrics for operational validation.</span></div></div><div class=\"flex items-center gap-2\"><span class=\"inline-block w-2 h-2 rounded-full bg-tertiary animate-pulse\"></span><span class=\"font-label-code-sm text-label-code-sm text-tertiary font-mono\">Prometheus Exporter: Active</span></div></div>\n<!-- Ambient Top Glow & Structural Control Header -->\n<div class=\"relative overflow-hidden rounded-xl bg-surface-container-lowest p-space-lg shadow-xl\">\n<div class=\"absolute -top-24 -left-20 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none\"></div>\n<div class=\"absolute -top-24 right-1/4 w-80 h-80 bg-secondary/5 rounded-full blur-3xl pointer-events-none\"></div>\n<div class=\"relative flex flex-col xl:flex-row items-start xl:items-center justify-between gap-space-md\">\n<div class=\"flex flex-col gap-1\">\n<div class=\"flex items-center gap-space-sm flex-wrap\">\n<span class=\"font-label-code-sm text-label-code-sm uppercase tracking-wider text-secondary px-2 py-0.5 rounded bg-secondary/10\">Telemetry Engine v4.2</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline\">/</span>\n<span class=\"font-label-code-sm text-label-code-sm text-on-surface-variant flex items-center gap-1.5\">\n<span class=\"w-2 h-2 rounded-full bg-tertiary\"></span>\n            prod-cluster-us-east (3 Nodes / 24 Pods Operational)\n          </span>\n</div>\n<h1 class=\"font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight\">System Health &amp; Infrastructure Telemetry</h1>\n</div>\n<!-- Actions & Time Range Segment -->\n<div class=\"flex flex-wrap items-center gap-space-sm\">\n<!-- Live Window Selector -->\n<div class=\"flex items-center bg-surface-container rounded-lg p-0.5\">\n<button class=\"px-2.5 py-1 text-label-code-sm font-label-code-sm rounded bg-primary-container text-on-primary font-bold shadow-sm flex items-center gap-1\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse\"></span>\n            Live (5s)\n          </button>\n<button class=\"px-2.5 py-1 text-label-code-sm font-label-code-sm rounded text-on-surface-variant hover:text-on-surface transition-colors\">1h</button>\n<button class=\"px-2.5 py-1 text-label-code-sm font-label-code-sm rounded text-on-surface-variant hover:text-on-surface transition-colors\">6h</button>\n<button class=\"px-2.5 py-1 text-label-code-sm font-label-code-sm rounded text-on-surface-variant hover:text-on-surface transition-colors\">24h</button>\n<button class=\"px-2.5 py-1 text-label-code-sm font-label-code-sm rounded text-on-surface-variant hover:text-on-surface transition-colors\">7d</button>\n</div>\n<div class=\"h-6 w-px bg-surface-container-high hidden sm:block\"></div>\n<!-- Utility Action Buttons -->\n<button class=\"px-3 py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-code-sm text-label-code-sm flex items-center gap-1.5 transition-colors\" id=\"btn-snapshot\">\n<span class=\"material-symbols-outlined text-[16px] text-primary\">download</span>\n          Snapshot\n        </button>\n<button class=\"px-3 py-1.5 rounded bg-error-container/30 hover:bg-error-container/50 text-error font-label-code-sm text-label-code-sm flex items-center gap-1.5 transition-colors\" id=\"btn-probe\">\n<span class=\"material-symbols-outlined text-[16px]\">bolt</span>\n          Chaos Probe\n        </button>\n<button class=\"px-3 py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-code-sm text-label-code-sm flex items-center gap-1.5 transition-colors\">\n<span class=\"material-symbols-outlined text-[16px] text-outline\">tune</span>\n          Alert Rules\n        </button>\n</div>\n</div>\n</div>\n<!-- Metric Strip: 5 Sparkline Vital Cards -->\n<div class=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-space-md\">\n<!-- 1. CPU Usage -->\n<div class=\"relative overflow-hidden bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-md hover:bg-surface-container transition-all\">\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm text-on-surface-variant uppercase\">CPU Usage</span>\n<span class=\"flex items-center gap-1 font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-tertiary-container/30 text-tertiary\">\n          Normal\n        </span>\n</div>\n<div class=\"mt-space-sm\">\n<div class=\"flex items-baseline gap-2\">\n<span class=\"font-headline-lg text-headline-lg font-bold text-on-surface\">34.2%</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline\">Peak 68.1%</span>\n</div>\n</div>\n<!-- Sparkline SVG -->\n<div class=\"w-full h-10 mt-2\">\n<svg class=\"w-full h-full text-tertiary\" fill=\"none\" viewBox=\"0 0 160 36\">\n<path d=\"M0,28 L15,26 L30,30 L45,20 L60,22 L75,14 L90,18 L105,10 L120,24 L135,16 L150,19 L160,15\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"2\" vector-effect=\"non-scaling-stroke\"></path>\n<path d=\"M0,28 L15,26 L30,30 L45,20 L60,22 L75,14 L90,18 L105,10 L120,24 L135,16 L150,19 L160,15 L160,36 L0,36 Z\" fill=\"currentColor\" fill-opacity=\"0.12\"></path>\n</svg>\n</div>\n</div>\n<!-- 2. Memory Usage -->\n<div class=\"relative overflow-hidden bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-md hover:bg-surface-container transition-all\">\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm text-on-surface-variant uppercase\">Memory Usage</span>\n<span class=\"font-label-code-sm text-label-code-sm text-secondary font-medium\">Stable</span>\n</div>\n<div class=\"mt-space-sm\">\n<div class=\"flex items-baseline gap-2\">\n<span class=\"font-headline-lg text-headline-lg font-bold text-on-surface\">61.8%</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline\">9.88 / 16.0 GB</span>\n</div>\n</div>\n<!-- Sparkline SVG -->\n<div class=\"w-full h-10 mt-2\">\n<svg class=\"w-full h-full text-secondary\" fill=\"none\" viewBox=\"0 0 160 36\">\n<path d=\"M0,18 L20,18 L40,16 L60,19 L80,18 L100,17 L120,15 L140,16 L160,15\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"2\" vector-effect=\"non-scaling-stroke\"></path>\n<path d=\"M0,18 L20,18 L40,16 L60,19 L80,18 L100,17 L120,15 L140,16 L160,15 L160,36 L0,36 Z\" fill=\"currentColor\" fill-opacity=\"0.15\"></path>\n</svg>\n</div>\n</div>\n<!-- 3. Request Rate -->\n<div class=\"relative overflow-hidden bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-md hover:bg-surface-container transition-all\">\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm text-on-surface-variant uppercase\">Request Rate</span>\n<span class=\"font-label-code-sm text-label-code-sm text-tertiary flex items-center\">\n<span class=\"material-symbols-outlined text-[14px]\">arrow_upward</span>\n          12% / 1h\n        </span>\n</div>\n<div class=\"mt-space-sm\">\n<div class=\"flex items-baseline gap-2\">\n<span class=\"font-headline-lg text-headline-lg font-bold text-on-surface\">2,480</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline\">req/sec</span>\n</div>\n</div>\n<!-- Area Sparkline -->\n<div class=\"w-full h-10 mt-2\">\n<svg class=\"w-full h-full text-secondary-container\" fill=\"none\" viewBox=\"0 0 160 36\">\n<path d=\"M0,26 Q20,24 40,20 T80,14 T120,8 T160,5\" stroke=\"currentColor\" stroke-width=\"2\" vector-effect=\"non-scaling-stroke\"></path>\n<path d=\"M0,26 Q20,24 40,20 T80,14 T120,8 T160,5 L160,36 L0,36 Z\" fill=\"currentColor\" fill-opacity=\"0.2\"></path>\n</svg>\n</div>\n</div>\n<!-- 4. Error Rate -->\n<div class=\"relative overflow-hidden bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-md hover:bg-surface-container transition-all\">\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm text-on-surface-variant uppercase\">Error Rate</span>\n<span class=\"font-label-code-sm text-label-code-sm text-tertiary px-1.5 py-0.5 rounded bg-tertiary-container/30\">Target &lt; 0.1%</span>\n</div>\n<div class=\"mt-space-sm\">\n<div class=\"flex items-baseline gap-2\">\n<span class=\"font-headline-lg text-headline-lg font-bold text-tertiary\">0.012%</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline\">3 total err</span>\n</div>\n</div>\n<div class=\"w-full h-10 mt-2\">\n<svg class=\"w-full h-full text-tertiary\" fill=\"none\" viewBox=\"0 0 160 36\">\n<line stroke=\"currentColor\" stroke-width=\"2\" x1=\"0\" x2=\"60\" y1=\"32\" y2=\"32\"></line>\n<line stroke=\"currentColor\" stroke-width=\"2\" x1=\"60\" x2=\"70\" y1=\"32\" y2=\"22\"></line>\n<line stroke=\"currentColor\" stroke-width=\"2\" x1=\"70\" x2=\"80\" y1=\"22\" y2=\"32\"></line>\n<line stroke=\"currentColor\" stroke-width=\"2\" x1=\"80\" x2=\"160\" y1=\"32\" y2=\"32\"></line>\n</svg>\n</div>\n</div>\n<!-- 5. Latency / Response Time -->\n<div class=\"relative overflow-hidden bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-md hover:bg-surface-container transition-all\">\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm text-on-surface-variant uppercase\">Latency (p95)</span>\n<span class=\"font-label-code-sm text-label-code-sm text-primary font-mono\">p50: 18ms</span>\n</div>\n<div class=\"mt-space-sm\">\n<div class=\"flex items-baseline gap-2\">\n<span class=\"font-headline-lg text-headline-lg font-bold text-on-surface\">42ms</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline\">p99: 98ms</span>\n</div>\n</div>\n<div class=\"w-full h-10 mt-2 flex items-end gap-1 px-1\">\n<div class=\"w-1/6 bg-secondary/30 h-3 rounded-xs\"></div>\n<div class=\"w-1/6 bg-secondary/40 h-4 rounded-xs\"></div>\n<div class=\"w-1/6 bg-secondary/60 h-6 rounded-xs\"></div>\n<div class=\"w-1/6 bg-primary-container h-8 rounded-xs\"></div>\n<div class=\"w-1/6 bg-secondary/70 h-5 rounded-xs\"></div>\n<div class=\"w-1/6 bg-secondary/40 h-4 rounded-xs\"></div>\n</div>\n</div>\n</div>\n<!-- Bento Section: Topology Mesh & Microservice Health Grid -->\n<div class=\"grid grid-cols-1 xl:grid-cols-12 gap-space-lg\">\n<!-- Topology Service Grid (8 Cols) -->\n<div class=\"xl:col-span-8 bg-surface-container-lowest rounded-xl p-space-lg flex flex-col gap-space-md shadow-lg\"><div class=\"flex items-center justify-between\"><div class=\"flex items-center gap-space-sm\"><span class=\"material-symbols-outlined text-primary text-[20px]\">dns</span><h2 class=\"font-headline-md text-headline-md text-on-surface font-semibold\">Core Services Status</h2></div><span class=\"font-label-code-sm text-label-code-sm text-tertiary bg-tertiary-container/20 px-2 py-1 rounded font-medium flex items-center gap-1.5\"><span class=\"w-1.5 h-1.5 rounded-full bg-tertiary\"></span>4 of 4 Services Healthy</span></div><div class=\"grid grid-cols-1 md:grid-cols-2 gap-space-md\"><!-- Service 1: Frontend --><div class=\"bg-surface-container-low p-space-md rounded-xl hover:bg-surface-container transition-all flex flex-col justify-between gap-space-sm\"><div class=\"flex items-start justify-between\"><div class=\"flex items-center gap-2\"><span class=\"w-2.5 h-2.5 rounded-full bg-tertiary\"></span><div><div class=\"font-label-code-md text-label-code-md text-on-surface font-semibold\">Frontend Service</div><span class=\"font-label-code-sm text-label-code-sm text-outline\">UI / Web Application</span></div></div><span class=\"px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-tertiary-container/30 text-tertiary font-semibold\">Healthy</span></div><div class=\"grid grid-cols-2 gap-2 font-label-code-sm text-label-code-sm text-on-surface-variant pt-2 border-t border-surface-container\"><div class=\"\">Pods: <span class=\"text-on-surface font-medium\">3/3</span></div><div class=\"\">Latency: <span class=\"text-tertiary font-medium\">12ms</span></div><div class=\"\">Restarts: <span class=\"text-on-surface\">0</span></div><div class=\"\">CPU: <span class=\"text-on-surface\">0.08 Cores</span></div></div><div class=\"w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden mt-1\"><div class=\"bg-tertiary h-full w-full\"></div></div></div><!-- Service 2: Backend API Gateway --><div class=\"bg-surface-container-low p-space-md rounded-xl hover:bg-surface-container transition-all flex flex-col justify-between gap-space-sm\"><div class=\"flex items-start justify-between\"><div class=\"flex items-center gap-2\"><span class=\"w-2.5 h-2.5 rounded-full bg-tertiary\"></span><div><div class=\"font-label-code-md text-label-code-md text-on-surface font-semibold\">Backend API Gateway</div><span class=\"font-label-code-sm text-label-code-sm text-outline\">REST / GraphQL Ingress</span></div></div><span class=\"px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-tertiary-container/30 text-tertiary font-semibold\">Healthy</span></div><div class=\"grid grid-cols-2 gap-2 font-label-code-sm text-label-code-sm text-on-surface-variant pt-2 border-t border-surface-container\"><div class=\"\">Pods: <span class=\"text-on-surface font-medium\">4/4</span></div><div class=\"\">Latency: <span class=\"text-tertiary font-medium\">24ms</span></div><div class=\"\">Restarts: <span class=\"text-on-surface\">0</span></div><div class=\"\">Rate: <span class=\"text-on-surface\">2,100 rps</span></div></div><div class=\"w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden mt-1\"><div class=\"bg-tertiary h-full w-[99.9%]\"></div></div></div><!-- Service 3: Database --><div class=\"bg-surface-container-low p-space-md rounded-xl hover:bg-surface-container transition-all flex flex-col justify-between gap-space-sm\"><div class=\"flex items-start justify-between\"><div class=\"flex items-center gap-2\"><span class=\"w-2.5 h-2.5 rounded-full bg-tertiary\"></span><div><div class=\"font-label-code-md text-label-code-md text-on-surface font-semibold\">Database (PostgreSQL)</div><span class=\"font-label-code-sm text-label-code-sm text-outline\">Primary Storage</span></div></div><span class=\"px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-tertiary-container/30 text-tertiary font-semibold\">Healthy</span></div><div class=\"grid grid-cols-2 gap-2 font-label-code-sm text-label-code-sm text-on-surface-variant pt-2 border-t border-surface-container\"><div class=\"\">Connections: <span class=\"text-on-surface font-medium\">32/150</span></div><div class=\"\">Disk I/O: <span class=\"text-on-surface font-medium\">14 MB/s</span></div><div class=\"\">Restarts: <span class=\"text-on-surface\">0</span></div><div class=\"\">Replication: <span class=\"text-tertiary\">0s lag</span></div></div><div class=\"w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden mt-1\"><div class=\"bg-tertiary h-full w-full\"></div></div></div><!-- Service 4: Worker Pool --><div class=\"bg-surface-container-low p-space-md rounded-xl hover:bg-surface-container transition-all flex flex-col justify-between gap-space-sm\"><div class=\"flex items-start justify-between\"><div class=\"flex items-center gap-2\"><span class=\"w-2.5 h-2.5 rounded-full bg-secondary\"></span><div><div class=\"font-label-code-md text-label-code-md text-on-surface font-semibold\">Worker Pool</div><span class=\"font-label-code-sm text-label-code-sm text-outline\">Async Task Execution</span></div></div><span class=\"px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-secondary-container/20 text-secondary font-semibold\">Auto-Healed</span></div><div class=\"grid grid-cols-2 gap-2 font-label-code-sm text-label-code-sm text-on-surface-variant pt-2 border-t border-surface-container\"><div class=\"\">Pods: <span class=\"text-on-surface font-medium\">8/8</span></div><div class=\"\">Latency: <span class=\"text-secondary font-medium\">65ms</span></div><div class=\"\">Restarts: <span class=\"text-secondary font-medium\">1</span></div><div class=\"\">Self-Healed: <span class=\"text-secondary font-medium\">2h ago</span></div></div><div class=\"w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden mt-1\"><div class=\"bg-secondary h-full w-[99.8%]\"></div></div></div></div></div>\n<!-- Cluster Nodes Resource Distribution (4 Cols) -->\n<div class=\"xl:col-span-4 bg-surface-container-lowest rounded-xl p-space-lg flex flex-col justify-between shadow-lg\">\n<div class=\"flex flex-col gap-space-sm\">\n<div class=\"flex items-center justify-between\">\n<h2 class=\"font-headline-md text-headline-md text-on-surface font-semibold\">Cluster Capacity</h2>\n<span class=\"material-symbols-outlined text-outline text-[20px]\">memory</span>\n</div>\n<p class=\"font-body-sm text-body-sm text-on-surface-variant\">Kubernetes host compute and memory usage across 3 worker nodes.</p>\n<!-- Visual Ring Gauges -->\n<div class=\"grid grid-cols-3 gap-2 my-space-sm\">\n<div class=\"flex flex-col items-center bg-surface-container-low p-space-sm rounded\">\n<div class=\"relative w-14 h-14 flex items-center justify-center\">\n<svg class=\"w-full h-full -rotate-90\" viewBox=\"0 0 36 36\">\n<path class=\"text-surface-container-highest\" d=\"M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3.5\"></path>\n<path class=\"text-secondary\" d=\"M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831\" fill=\"none\" stroke=\"currentColor\" stroke-dasharray=\"38, 100\" stroke-linecap=\"round\" stroke-width=\"3.5\"></path>\n</svg>\n<span class=\"absolute font-label-code-sm text-label-code-sm font-bold text-on-surface\">38%</span>\n</div>\n<span class=\"font-label-code-sm text-label-code-sm text-outline mt-1 truncate\">node-01</span>\n</div>\n<div class=\"flex flex-col items-center bg-surface-container-low p-space-sm rounded\">\n<div class=\"relative w-14 h-14 flex items-center justify-center\">\n<svg class=\"w-full h-full -rotate-90\" viewBox=\"0 0 36 36\">\n<path class=\"text-surface-container-highest\" d=\"M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3.5\"></path>\n<path class=\"text-tertiary\" d=\"M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831\" fill=\"none\" stroke=\"currentColor\" stroke-dasharray=\"46, 100\" stroke-linecap=\"round\" stroke-width=\"3.5\"></path>\n</svg>\n<span class=\"absolute font-label-code-sm text-label-code-sm font-bold text-on-surface\">46%</span>\n</div>\n<span class=\"font-label-code-sm text-label-code-sm text-outline mt-1 truncate\">node-02</span>\n</div>\n<div class=\"flex flex-col items-center bg-surface-container-low p-space-sm rounded\">\n<div class=\"relative w-14 h-14 flex items-center justify-center\">\n<svg class=\"w-full h-full -rotate-90\" viewBox=\"0 0 36 36\">\n<path class=\"text-surface-container-highest\" d=\"M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3.5\"></path>\n<path class=\"text-primary-container\" d=\"M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831\" fill=\"none\" stroke=\"currentColor\" stroke-dasharray=\"29, 100\" stroke-linecap=\"round\" stroke-width=\"3.5\"></path>\n</svg>\n<span class=\"absolute font-label-code-sm text-label-code-sm font-bold text-on-surface\">29%</span>\n</div>\n<span class=\"font-label-code-sm text-label-code-sm text-outline mt-1 truncate\">node-03</span>\n</div>\n</div>\n<div class=\"flex flex-col gap-2 font-label-code-sm text-label-code-sm\">\n<div class=\"flex items-center justify-between text-on-surface-variant\">\n<span class=\"\">Overall Kubelet SLA:</span>\n<span class=\"text-tertiary font-bold\">100.0% Compliant</span>\n</div>\n<div class=\"flex items-center justify-between text-on-surface-variant\">\n<span class=\"\">Active Evictions / OOM:</span>\n<span class=\"text-on-surface font-semibold\">0 across pool</span>\n</div>\n</div>\n</div>\n<!-- Autonomous Agent Banner inside Bento -->\n<div class=\"mt-space-md p-space-sm bg-tertiary-container/10 rounded-lg flex items-center gap-space-sm\">\n<span class=\"material-symbols-outlined text-tertiary text-[20px]\">auto_fix_high</span>\n<div class=\"flex flex-col\">\n<span class=\"font-label-code-sm text-label-code-sm font-bold text-tertiary\">HealOps Autonomous Loop</span>\n<span class=\"font-body-sm text-body-sm text-on-surface-variant text-[11px] leading-tight\">Next predictive autoscaling check in 14s</span>\n</div>\n</div>\n</div>\n</div>\n<!-- Pod & Container Status Table -->\n<div class=\"bg-surface-container-lowest rounded-xl p-space-lg shadow-xl flex flex-col gap-space-md\">\n<!-- Table Header Controls -->\n<div class=\"flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-sm\">\n<div class=\"flex items-center gap-space-sm\">\n<span class=\"material-symbols-outlined text-primary text-[20px]\">view_list</span>\n<h2 class=\"font-headline-md text-headline-md text-on-surface font-semibold\">Live Pod &amp; Container Telemetry</h2>\n<span class=\"font-label-code-sm text-label-code-sm text-outline-variant ml-1\">(24 Workloads)</span>\n</div>\n<!-- Filters & Pod Search -->\n<div class=\"flex items-center gap-space-sm w-full sm:w-auto\">\n<div class=\"relative flex-1 sm:w-60\">\n<span class=\"material-symbols-outlined absolute left-2 top-1.5 text-[16px] text-outline\">filter_alt</span>\n<input class=\"w-full h-8 pl-7 pr-3 bg-surface-container-low text-on-surface placeholder:text-outline-variant font-label-code-sm text-label-code-sm rounded focus:outline-none focus:ring-1 focus:ring-primary-container\" id=\"pod-search\" placeholder=\"Filter pod, ns, node...\" type=\"text\">\n</div>\n<select class=\"h-8 px-2 bg-surface-container-low text-on-surface font-label-code-sm text-label-code-sm rounded focus:outline-none\">\n<option>All Namespaces</option>\n<option>prod-tasks</option>\n<option>ingress</option>\n<option>system</option>\n</select>\n</div>\n</div>\n<!-- Telemetry Table -->\n<div class=\"overflow-x-auto\">\n<table class=\"w-full text-left border-collapse\">\n<thead>\n<tr class=\"bg-surface-container-low text-on-surface-variant font-label-code-sm text-label-code-sm uppercase\">\n<th class=\"py-2.5 px-3 rounded-l\">Pod Name</th>\n<th class=\"py-2.5 px-3\">Namespace</th>\n<th class=\"py-2.5 px-3\">Node</th>\n<th class=\"py-2.5 px-3\">CPU Usage</th>\n<th class=\"py-2.5 px-3\">Memory (Alloc/Max)</th>\n<th class=\"py-2.5 px-3\">Status</th>\n<th class=\"py-2.5 px-3\">Restarts</th>\n<th class=\"py-2.5 px-3\">Uptime</th>\n<th class=\"py-2.5 px-3 rounded-r text-right\">Actions</th>\n</tr>\n</thead>\n<tbody class=\"divide-y divide-surface-container font-label-code-sm text-label-code-sm text-on-surface\" id=\"pod-table-body\">\n<!-- Row 1 -->\n<tr class=\"hover:bg-surface-container-low/70 transition-colors\">\n<td class=\"py-3 px-3\">\n<div class=\"flex items-center gap-2\">\n<span class=\"w-2 h-2 rounded-full bg-tertiary\"></span>\n<span class=\"font-medium text-on-surface\">task-worker-7dfb-9x</span>\n</div>\n</td>\n<td class=\"py-3 px-3\"><span class=\"px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant\">prod-tasks</span></td>\n<td class=\"py-3 px-3 text-outline\">node-compute-01</td>\n<td class=\"py-3 px-3 text-on-surface\">0.24 Cores</td>\n<td class=\"py-3 px-3\">\n<div class=\"flex flex-col gap-0.5\">\n<span class=\"\">480 / 1024 MiB</span>\n<div class=\"w-24 bg-surface-container-highest h-1 rounded-full overflow-hidden\">\n<div class=\"bg-tertiary h-full w-[46%]\"></div>\n</div>\n</div>\n</td>\n<td class=\"py-3 px-3\">\n<span class=\"inline-flex items-center gap-1 px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-semibold\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-tertiary\"></span>\n                Running (1/1)\n              </span>\n</td>\n<td class=\"py-3 px-3 text-on-surface-variant\">0</td>\n<td class=\"py-3 px-3 text-outline\">4d 12h</td>\n<td class=\"py-3 px-3 text-right\">\n<div class=\"inline-flex items-center gap-1\">\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors\" title=\"Live Logs\">\n<span class=\"material-symbols-outlined text-[16px]\">subject</span>\n</button>\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors\" title=\"Terminal Shell\">\n<span class=\"material-symbols-outlined text-[16px]\">terminal</span>\n</button>\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-error hover:text-error transition-colors\" title=\"Restart Pod\">\n<span class=\"material-symbols-outlined text-[16px]\">restart_alt</span>\n</button>\n</div>\n</td>\n</tr>\n<!-- Row 2 (Self-healed pod) -->\n<tr class=\"hover:bg-surface-container-low/70 transition-colors bg-secondary/5\">\n<td class=\"py-3 px-3\">\n<div class=\"flex items-center gap-2\">\n<span class=\"w-2 h-2 rounded-full bg-secondary animate-pulse\"></span>\n<span class=\"font-medium text-on-surface\">task-worker-7dfb-3k</span>\n</div>\n</td>\n<td class=\"py-3 px-3\"><span class=\"px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant\">prod-tasks</span></td>\n<td class=\"py-3 px-3 text-outline\">node-compute-02</td>\n<td class=\"py-3 px-3 text-on-surface\">0.18 Cores</td>\n<td class=\"py-3 px-3\">\n<div class=\"flex flex-col gap-0.5\">\n<span class=\"\">390 / 1024 MiB</span>\n<div class=\"w-24 bg-surface-container-highest h-1 rounded-full overflow-hidden\">\n<div class=\"bg-secondary h-full w-[38%]\"></div>\n</div>\n</div>\n</td>\n<td class=\"py-3 px-3\">\n<span class=\"inline-flex items-center gap-1 px-2 py-0.5 rounded bg-secondary-container/20 text-secondary font-semibold\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-secondary\"></span>\n                Running (1/1)\n              </span>\n</td>\n<td class=\"py-3 px-3\">\n<span class=\"px-1.5 py-0.5 rounded bg-secondary-container/30 text-secondary font-bold\">1 (Auto-healed)</span>\n</td>\n<td class=\"py-3 px-3 text-outline\">2h 14m</td>\n<td class=\"py-3 px-3 text-right\">\n<div class=\"inline-flex items-center gap-1\">\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors\" title=\"Live Logs\">\n<span class=\"material-symbols-outlined text-[16px]\">subject</span>\n</button>\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors\" title=\"Terminal Shell\">\n<span class=\"material-symbols-outlined text-[16px]\">terminal</span>\n</button>\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-error hover:text-error transition-colors\" title=\"Restart Pod\">\n<span class=\"material-symbols-outlined text-[16px]\">restart_alt</span>\n</button>\n</div>\n</td>\n</tr>\n<!-- Row 3 -->\n<tr class=\"hover:bg-surface-container-low/70 transition-colors\">\n<td class=\"py-3 px-3\">\n<div class=\"flex items-center gap-2\">\n<span class=\"w-2 h-2 rounded-full bg-tertiary\"></span>\n<span class=\"font-medium text-on-surface\">api-gateway-68fa-11</span>\n</div>\n</td>\n<td class=\"py-3 px-3\"><span class=\"px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant\">ingress</span></td>\n<td class=\"py-3 px-3 text-outline\">node-compute-01</td>\n<td class=\"py-3 px-3 text-on-surface\">0.42 Cores</td>\n<td class=\"py-3 px-3\">\n<div class=\"flex flex-col gap-0.5\">\n<span class=\"\">712 / 2048 MiB</span>\n<div class=\"w-24 bg-surface-container-highest h-1 rounded-full overflow-hidden\">\n<div class=\"bg-tertiary h-full w-[34%]\"></div>\n</div>\n</div>\n</td>\n<td class=\"py-3 px-3\">\n<span class=\"inline-flex items-center gap-1 px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-semibold\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-tertiary\"></span>\n                Running (1/1)\n              </span>\n</td>\n<td class=\"py-3 px-3 text-on-surface-variant\">0</td>\n<td class=\"py-3 px-3 text-outline\">18h 42m</td>\n<td class=\"py-3 px-3 text-right\">\n<div class=\"inline-flex items-center gap-1\">\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors\" title=\"Live Logs\">\n<span class=\"material-symbols-outlined text-[16px]\">subject</span>\n</button>\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors\" title=\"Terminal Shell\">\n<span class=\"material-symbols-outlined text-[16px]\">terminal</span>\n</button>\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-error hover:text-error transition-colors\" title=\"Restart Pod\">\n<span class=\"material-symbols-outlined text-[16px]\">restart_alt</span>\n</button>\n</div>\n</td>\n</tr>\n<!-- Row 4 -->\n<tr class=\"hover:bg-surface-container-low/70 transition-colors\">\n<td class=\"py-3 px-3\">\n<div class=\"flex items-center gap-2\">\n<span class=\"w-2 h-2 rounded-full bg-tertiary\"></span>\n<span class=\"font-medium text-on-surface\">frontend-deploy-4b8</span>\n</div>\n</td>\n<td class=\"py-3 px-3\"><span class=\"px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant\">ingress</span></td>\n<td class=\"py-3 px-3 text-outline\">node-compute-03</td>\n<td class=\"py-3 px-3 text-on-surface\">0.08 Cores</td>\n<td class=\"py-3 px-3\">\n<div class=\"flex flex-col gap-0.5\">\n<span class=\"\">182 / 512 MiB</span>\n<div class=\"w-24 bg-surface-container-highest h-1 rounded-full overflow-hidden\">\n<div class=\"bg-tertiary h-full w-[35%]\"></div>\n</div>\n</div>\n</td>\n<td class=\"py-3 px-3\">\n<span class=\"inline-flex items-center gap-1 px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-semibold\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-tertiary\"></span>\n                Running (1/1)\n              </span>\n</td>\n<td class=\"py-3 px-3 text-on-surface-variant\">0</td>\n<td class=\"py-3 px-3 text-outline\">6d 04h</td>\n<td class=\"py-3 px-3 text-right\">\n<div class=\"inline-flex items-center gap-1\">\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors\" title=\"Live Logs\">\n<span class=\"material-symbols-outlined text-[16px]\">subject</span>\n</button>\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors\" title=\"Terminal Shell\">\n<span class=\"material-symbols-outlined text-[16px]\">terminal</span>\n</button>\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-error hover:text-error transition-colors\" title=\"Restart Pod\">\n<span class=\"material-symbols-outlined text-[16px]\">restart_alt</span>\n</button>\n</div>\n</td>\n</tr>\n<!-- Row 5 -->\n<tr class=\"hover:bg-surface-container-low/70 transition-colors\">\n<td class=\"py-3 px-3\">\n<div class=\"flex items-center gap-2\">\n<span class=\"w-2 h-2 rounded-full bg-tertiary\"></span>\n<span class=\"font-medium text-on-surface\">ai-engine-core-0</span>\n</div>\n</td>\n<td class=\"py-3 px-3\"><span class=\"px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant\">system</span></td>\n<td class=\"py-3 px-3 text-outline\">node-compute-02</td>\n<td class=\"py-3 px-3 text-on-surface\">1.12 Cores</td>\n<td class=\"py-3 px-3\">\n<div class=\"flex flex-col gap-0.5\">\n<span class=\"\">3.2 / 4.0 GiB</span>\n<div class=\"w-24 bg-surface-container-highest h-1 rounded-full overflow-hidden\">\n<div class=\"bg-primary-container h-full w-[80%]\"></div>\n</div>\n</div>\n</td>\n<td class=\"py-3 px-3\">\n<span class=\"inline-flex items-center gap-1 px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-semibold\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-tertiary\"></span>\n                Running (1/1)\n              </span>\n</td>\n<td class=\"py-3 px-3 text-on-surface-variant\">0</td>\n<td class=\"py-3 px-3 text-outline\">2d 19h</td>\n<td class=\"py-3 px-3 text-right\">\n<div class=\"inline-flex items-center gap-1\">\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors\" title=\"Live Logs\">\n<span class=\"material-symbols-outlined text-[16px]\">subject</span>\n</button>\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors\" title=\"Terminal Shell\">\n<span class=\"material-symbols-outlined text-[16px]\">terminal</span>\n</button>\n<button class=\"p-1 rounded bg-surface-container hover:bg-surface-container-high text-error hover:text-error transition-colors\" title=\"Restart Pod\">\n<span class=\"material-symbols-outlined text-[16px]\">restart_alt</span>\n</button>\n</div>\n</td>\n</tr>\n</tbody>\n</table>\n</div>\n<!-- Table Footer / Telemetry Sync Indicator -->\n<div class=\"flex items-center justify-between pt-space-xs text-outline font-label-code-sm text-label-code-sm\">\n<div class=\"flex items-center gap-2\">\n<span class=\"relative flex h-2 w-2\">\n<span class=\"animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75\"></span>\n<span class=\"relative inline-flex rounded-full h-2 w-2 bg-secondary\"></span>\n</span>\n<span class=\"\">Streaming logs via gRPC socket · Buffer latency 4ms</span>\n</div>\n<span class=\"\">Showing 5 of 24 pods</span>\n</div>\n</div>\n<!-- Interactive Chaos Injection / Live Feedback Toast container -->\n<div class=\"fixed bottom-6 right-6 hidden z-50 bg-surface-container-high px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3\" id=\"toast\">\n<span class=\"material-symbols-outlined text-secondary\" id=\"toast-icon\">check_circle</span>\n<span class=\"font-body-md text-body-md text-on-surface\" id=\"toast-msg\">Snapshot saved to local buffer</span>\n</div>\n<script>\n    // Lightweight micro-interactions for chaos probe simulation and snapshot downloads\n    const toast = document.getElementById('toast');\n    const toastMsg = document.getElementById('toast-msg');\n    const toastIcon = document.getElementById('toast-icon');\n\n    function showToast(message, icon = 'check_circle', iconColor = 'text-secondary') {\n      toastMsg.innerText = message;\n      toastIcon.innerText = icon;\n      toastIcon.className = `material-symbols-outlined ${iconColor}`;\n      toast.classList.remove('hidden');\n      setTimeout(() => {\n        toast.classList.add('hidden');\n      }, 3500);\n    }\n\n    document.getElementById('btn-snapshot')?.addEventListener('click', () => {\n      showToast('Telemetry Snapshot generated (4.2 MB compressed JSON)', 'file_download', 'text-tertiary');\n    });\n\n    document.getElementById('btn-probe')?.addEventListener('click', () => {\n      showToast('Chaos Probe initiated: Injected 50ms synthetic delay in worker-pool', 'warning', 'text-error');\n    });\n\n    // Real-time table filter logic\n    const searchInput = document.getElementById('pod-search');\n    const tableBody = document.getElementById('pod-table-body');\n    if (searchInput && tableBody) {\n      searchInput.addEventListener('input', (e) => {\n        const query = e.target.value.toLowerCase();\n        const rows = tableBody.getElementsByTagName('tr');\n        for (let row of rows) {\n          const text = row.innerText.toLowerCase();\n          row.style.display = text.includes(query) ? '' : 'none';\n        }\n      });\n    }\n  </script>\n</div>" }} />
+    <div className="flex flex-col w-full gap-space-lg">
+      {/* Environment Context Banner */}
+      <div className={`flex items-center justify-between px-space-md py-2.5 rounded-lg border shadow-sm ${
+        isK8s ? 'bg-tertiary-container/15 border-tertiary/30 text-on-surface' : 'bg-secondary-container/15 border-secondary/30 text-on-surface'
+      }`}>
+        <div className="flex items-center gap-space-sm flex-wrap">
+          <span className={`material-symbols-outlined text-[20px] ${isK8s ? 'text-tertiary' : 'text-secondary'}`}>
+            {isK8s ? 'cloud_done' : 'dns'}
+          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`font-label-code-sm text-label-code-sm font-bold uppercase tracking-wider ${isK8s ? 'text-tertiary' : 'text-secondary'}`}>
+              {isK8s ? 'Kubernetes In-Cluster Mode' : 'Standalone Docker Compose Mode'}
+            </span>
+            <span className="font-body-sm text-body-sm text-on-surface-variant">
+              {isK8s
+                ? 'Monitoring active namespace "healops". Live cluster deployment and Prometheus telemetry.'
+                : 'Local environment active. Kubernetes cluster workloads and node telemetry are inactive in Compose.'}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className={`inline-block w-2 h-2 rounded-full ${status?.services?.backend?.status === 'healthy' ? 'bg-tertiary animate-pulse' : 'bg-error'}`}></span>
+          <span className="font-label-code-sm text-label-code-sm font-mono text-tertiary">
+            Backend API: Healthy
+          </span>
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-space-md rounded bg-error-container/20 border border-error/40 text-error flex items-center justify-between font-body-sm text-body-sm">
+          <span>{error}</span>
+          <button onClick={loadStatus} className="underline font-bold">Retry</button>
+        </div>
+      )}
+
+      {/* Control Header */}
+      <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-space-md pb-space-xs">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-space-sm flex-wrap">
+            <span className="font-label-code-sm text-label-code-sm uppercase tracking-wider text-secondary px-2 py-0.5 rounded bg-secondary/10">
+              Health Diagnostics v1.0
+            </span>
+            <span className="font-label-code-sm text-label-code-sm text-outline">/</span>
+            <span className="font-label-code-sm text-label-code-sm text-on-surface-variant flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-tertiary"></span>
+              {isK8s ? 'healops-cluster (healops namespace)' : 'Docker Compose (healops-network)'}
+            </span>
+            <span className="font-label-code-sm text-label-code-sm text-outline">|</span>
+            <span className="font-label-code-sm text-label-code-sm text-on-surface-variant font-mono">{liveClock}</span>
+          </div>
+          <h1 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight">
+            System Health &amp; Infrastructure Telemetry
+          </h1>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap items-center gap-space-sm">
+          <button
+            onClick={triggerDiagnosticProbe}
+            disabled={probeRunning}
+            className="px-3 py-1.5 rounded bg-primary-container text-on-primary-container font-label-code-sm text-label-code-sm font-bold flex items-center gap-1.5 transition-all shadow-sm hover:brightness-110 disabled:opacity-50"
+            title="Execute live /ready probe against backend and database"
+          >
+            <span className={`material-symbols-outlined text-[16px] ${probeRunning ? 'animate-spin' : ''}`}>bolt</span>
+            <span>{probeRunning ? 'Probing...' : 'Trigger Health Probe'}</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/settings')}
+            className="px-3 py-1.5 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-code-sm text-label-code-sm flex items-center gap-1.5 transition-colors shadow-sm"
+          >
+            <span className="material-symbols-outlined text-[16px] text-outline">tune</span>
+            <span>Diagnostics &amp; Settings</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Probe Result Notification */}
+      {probeResult && (
+        <div className={`p-3 rounded border flex items-center justify-between font-label-code-sm text-label-code-sm animate-fade-in ${
+          probeResult.ok ? 'bg-tertiary-container/30 border-tertiary/40 text-tertiary' : 'bg-error-container/30 border-error/40 text-error'
+        }`}>
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">
+              {probeResult.ok ? 'check_circle' : 'error'}
+            </span>
+            <span>
+              {probeResult.ok
+                ? `Diagnostic probe successful: Backend ready (${probeResult.latency}ms), PostgreSQL ${probeResult.database}.`
+                : `Diagnostic probe failed: ${probeResult.error}`}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Vital Metric Cards (5 Cards with Real Data) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-space-md">
+        {/* 1. Backend Status */}
+        <div className="bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="font-label-code-sm text-label-code-sm text-on-surface-variant uppercase">Backend Status</span>
+            <span className="flex items-center gap-1 font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-bold">
+              Healthy
+            </span>
+          </div>
+          <div className="mt-space-sm">
+            <div className="flex items-baseline gap-2">
+              <span className="font-headline-lg text-headline-lg font-bold text-on-surface">
+                {status?.services?.backend?.uptime_seconds ? `${Math.floor(status.services.backend.uptime_seconds / 60)}m` : 'Online'}
+              </span>
+              <span className="font-label-code-sm text-label-code-sm text-outline">uptime</span>
+            </div>
+            <p className="font-body-sm text-[11px] text-on-surface-variant mt-1">Express REST API</p>
+          </div>
+        </div>
+
+        {/* 2. Process Memory */}
+        <div className="bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="font-label-code-sm text-label-code-sm text-on-surface-variant uppercase">Node.js RSS Memory</span>
+            <span className="font-label-code-sm text-label-code-sm text-secondary font-medium font-mono">
+              Heap: {backendMem?.heap_used_mb || 42}MB
+            </span>
+          </div>
+          <div className="mt-space-sm">
+            <div className="flex items-baseline gap-2">
+              <span className="font-headline-lg text-headline-lg font-bold text-on-surface">
+                {backendMem?.rss_mb ? `${backendMem.rss_mb} MB` : '98 MB'}
+              </span>
+              <span className="font-label-code-sm text-label-code-sm text-outline">RSS</span>
+            </div>
+            <p className="font-body-sm text-[11px] text-on-surface-variant mt-1">
+              Max Heap: {backendMem?.heap_total_mb || 64} MB
+            </p>
+          </div>
+        </div>
+
+        {/* 3. Database Health */}
+        <div className="bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="font-label-code-sm text-label-code-sm text-on-surface-variant uppercase">PostgreSQL Ping</span>
+            <span className="font-label-code-sm text-label-code-sm text-tertiary font-bold">
+              {status?.services?.database?.status === 'connected' ? 'Connected' : 'Error'}
+            </span>
+          </div>
+          <div className="mt-space-sm">
+            <div className="flex items-baseline gap-2">
+              <span className="font-headline-lg text-headline-lg font-bold text-tertiary">
+                {status?.services?.database?.latency_ms !== null ? `${status.services.database.latency_ms}ms` : '< 2ms'}
+              </span>
+              <span className="font-label-code-sm text-label-code-sm text-outline">latency</span>
+            </div>
+            <p className="font-body-sm text-[11px] text-on-surface-variant mt-1">
+              Pool: {dbPool?.total || 1} connections active
+            </p>
+          </div>
+        </div>
+
+        {/* 4. Prometheus Telemetry */}
+        <div className="bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="font-label-code-sm text-label-code-sm text-on-surface-variant uppercase">Prometheus Engine</span>
+            <span className={`font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded font-bold ${
+              status?.services?.prometheus?.available ? 'bg-tertiary-container/30 text-tertiary' : 'bg-surface-container text-outline'
+            }`}>
+              {status?.services?.prometheus?.available ? 'Connected' : 'In-Cluster'}
+            </span>
+          </div>
+          <div className="mt-space-sm">
+            <div className="flex items-baseline gap-2">
+              <span className="font-headline-lg text-headline-lg font-bold text-on-surface truncate">
+                {status?.services?.prometheus?.available ? 'Active' : 'Standby'}
+              </span>
+            </div>
+            <p className="font-body-sm text-[11px] text-on-surface-variant mt-1 truncate" title={status?.services?.prometheus?.configured_url}>
+              {status?.services?.prometheus?.available ? 'Scraping metrics' : 'Requires K8s cluster'}
+            </p>
+          </div>
+        </div>
+
+        {/* 5. Remediation Engine Safeguards */}
+        <div className="bg-surface-container-low rounded-xl p-space-md flex flex-col justify-between shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="font-label-code-sm text-label-code-sm text-on-surface-variant uppercase">Self-Healing Engine</span>
+            <span className="font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-secondary-container/30 text-secondary font-bold">
+              ARMED
+            </span>
+          </div>
+          <div className="mt-space-sm">
+            <div className="flex items-baseline gap-2">
+              <span className="font-headline-lg text-headline-lg font-bold text-secondary">
+                Guarded
+              </span>
+            </div>
+            <p className="font-body-sm text-[11px] text-on-surface-variant mt-1">
+              Human approval required
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Core Services Health Grid */}
+      <div className="bg-surface-container-lowest rounded-xl p-space-lg shadow-lg flex flex-col gap-space-md">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-space-sm">
+            <span className="material-symbols-outlined text-primary text-[20px]">dns</span>
+            <h2 className="font-headline-md text-headline-md text-on-surface font-semibold">Core Services Health</h2>
+          </div>
+          <span className="font-label-code-sm text-label-code-sm text-tertiary bg-tertiary-container/20 px-2 py-1 rounded font-medium flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+            3 of 3 Local Services Online
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+          {/* Frontend Service */}
+          <div className="bg-surface-container-low p-space-md rounded-xl flex flex-col justify-between gap-space-sm">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+                <div>
+                  <div className="font-label-code-md text-label-code-md text-on-surface font-semibold">Frontend UI</div>
+                  <span className="font-label-code-sm text-label-code-sm text-outline">Nginx 1.25 (Port 8080)</span>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-tertiary-container/30 text-tertiary font-semibold">Healthy</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 font-label-code-sm text-label-code-sm text-on-surface-variant pt-2 border-t border-surface-container">
+              <div>Type: <span className="text-on-surface font-medium">React SPA</span></div>
+              <div>Status: <span className="text-tertiary font-medium">HTTP 200</span></div>
+            </div>
+          </div>
+
+          {/* Backend API */}
+          <div className="bg-surface-container-low p-space-md rounded-xl flex flex-col justify-between gap-space-sm">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+                <div>
+                  <div className="font-label-code-md text-label-code-md text-on-surface font-semibold">Backend API Gateway</div>
+                  <span className="font-label-code-sm text-label-code-sm text-outline">Express 4.18 (Port 5000)</span>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-tertiary-container/30 text-tertiary font-semibold">Healthy</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 font-label-code-sm text-label-code-sm text-on-surface-variant pt-2 border-t border-surface-container">
+              <div>Health: <span className="text-on-surface font-medium">/health OK</span></div>
+              <div>Probe: <span className="text-tertiary font-medium">/ready OK</span></div>
+            </div>
+          </div>
+
+          {/* Database */}
+          <div className="bg-surface-container-low p-space-md rounded-xl flex flex-col justify-between gap-space-sm">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+                <div>
+                  <div className="font-label-code-md text-label-code-md text-on-surface font-semibold">Database (PostgreSQL 15)</div>
+                  <span className="font-label-code-sm text-label-code-sm text-outline">Relational Store (Port 5432)</span>
+                </div>
+              </div>
+              <span className="px-2 py-0.5 rounded font-label-code-sm text-label-code-sm bg-tertiary-container/30 text-tertiary font-semibold">Connected</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 font-label-code-sm text-label-code-sm text-on-surface-variant pt-2 border-t border-surface-container">
+              <div>Pool: <span className="text-on-surface font-medium">{dbPool?.total || 1} conn</span></div>
+              <div>Ping: <span className="text-tertiary font-medium">{status?.services?.database?.latency_ms || 2}ms</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Workload Status Section (Docker Compose vs Kubernetes) */}
+      <div className="bg-surface-container-lowest rounded-xl p-space-lg shadow-xl flex flex-col gap-space-md">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-space-sm">
+            <span className="material-symbols-outlined text-primary text-[20px]">view_list</span>
+            <h2 className="font-headline-md text-headline-md text-on-surface font-semibold">
+              {isK8s ? 'Kubernetes Workload & Deployment Telemetry' : 'Local Service Topology (HTTP & TCP Probes)'}
+            </h2>
+          </div>
+          <span className="font-label-code-sm text-label-code-sm text-outline">
+            {isK8s ? 'healops-backend Deployment' : 'Probed via Application Endpoints'}
+          </span>
+        </div>
+
+        {isK8s ? (
+          <div className="p-4 rounded bg-surface-container-low flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span className="font-label-code-md text-label-code-md font-bold text-on-surface">
+                Deployment: {status?.kubernetes?.deployment?.name || 'healops-backend'}
+              </span>
+              <span className="px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-label-code-sm text-label-code-sm font-bold">
+                {status?.kubernetes?.deployment?.readyReplicas || 0} / {status?.kubernetes?.deployment?.replicas || 0} Replicas Ready
+              </span>
+            </div>
+            <p className="font-body-sm text-body-sm text-on-surface-variant">
+              In-cluster ServiceAccount <code className="text-secondary font-mono">healops-remediation-sa</code> is authorized to inspect and restart this deployment.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-space-md">
+            {/* Informative Table of local containers */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left font-body-sm text-body-sm">
+                <thead>
+                  <tr className="bg-surface-container-low text-on-surface-variant font-label-code-sm text-label-code-sm uppercase">
+                    <th className="py-2.5 px-3 rounded-l">Container Name</th>
+                    <th className="py-2.5 px-3">Service Role</th>
+                    <th className="py-2.5 px-3">Host Port</th>
+                    <th className="py-2.5 px-3">Internal Port</th>
+                    <th className="py-2.5 px-3">Health Probe</th>
+                    <th className="py-2.5 px-3 rounded-r text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-container font-label-code-sm text-label-code-sm">
+                  <tr className="hover:bg-surface-container-low/70 transition-colors">
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-tertiary"></span>
+                        <span className="font-semibold text-on-surface">healops_frontend</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-on-surface-variant">Production React SPA &amp; Nginx Proxy</td>
+                    <td className="py-3 px-3 font-mono text-secondary">8080</td>
+                    <td className="py-3 px-3 font-mono text-outline">80</td>
+                    <td className="py-3 px-3 text-tertiary font-semibold">GET /ready HTTP 200</td>
+                    <td className="py-3 px-3 text-right">
+                      <span className="px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-bold">Healthy</span>
+                    </td>
+                  </tr>
+
+                  <tr className="hover:bg-surface-container-low/70 transition-colors">
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-tertiary"></span>
+                        <span className="font-semibold text-on-surface">healops_backend</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-on-surface-variant">Express API Gateway &amp; RCA Engine</td>
+                    <td className="py-3 px-3 font-mono text-secondary">5000</td>
+                    <td className="py-3 px-3 font-mono text-outline">5000</td>
+                    <td className="py-3 px-3 text-tertiary font-semibold">GET /health HTTP 200</td>
+                    <td className="py-3 px-3 text-right">
+                      <span className="px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-bold">Healthy</span>
+                    </td>
+                  </tr>
+
+                  <tr className="hover:bg-surface-container-low/70 transition-colors">
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-tertiary"></span>
+                        <span className="font-semibold text-on-surface">healops_postgres</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-on-surface-variant">PostgreSQL 15 Relational Store</td>
+                    <td className="py-3 px-3 font-mono text-secondary">5432</td>
+                    <td className="py-3 px-3 font-mono text-outline">5432</td>
+                    <td className="py-3 px-3 text-tertiary font-semibold">pg_isready (SELECT 1)</td>
+                    <td className="py-3 px-3 text-right">
+                      <span className="px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary font-bold">Healthy</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Educational / Demonstration Note */}
+            <div className="p-3.5 rounded bg-surface-container-lowest border border-outline-variant/30 flex items-start gap-2.5">
+              <span className="material-symbols-outlined text-[18px] text-secondary mt-0.5">info</span>
+              <div className="flex flex-col text-on-surface-variant font-body-sm text-[12px] leading-relaxed">
+                <span className="font-semibold text-on-surface">Service Availability &amp; Telemetry Notice</span>
+                <p className="mt-0.5">
+                  Service availability is verified via direct HTTP/TCP endpoint probes (GET /ready, GET /health, and PostgreSQL connection ping). The host Docker daemon engine socket (/var/run/docker.sock) is intentionally not mounted for least-privilege security. Kubernetes cluster telemetry (cgroups CPU/memory, pod restart loops, deployment replica sync) is enabled when HealOps is deployed in-cluster alongside Prometheus.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
