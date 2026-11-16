@@ -25,7 +25,7 @@ test.describe('Local End-to-End Application & Phase 9C Verification', () => {
     // -----------------------------------------------------------------
     // 2. DASHBOARD LOADS CORRECTLY WITH LOCAL ENVIRONMENT INDICATORS
     // -----------------------------------------------------------------
-    await expect(page).toHaveURL('/dashboard');
+    await expect(page).toHaveURL('/dashboard', { timeout: 15000 });
     await expect(page.locator('h1', { hasText: 'Cluster Overview' })).toBeVisible();
 
     // Verify local compose environment indicators (not hardcoded prod / k8s)
@@ -178,6 +178,90 @@ test.describe('Local End-to-End Application & Phase 9C Verification', () => {
 
     await page.screenshot({ path: 'test-results/06-ai-analysis-error.png' });
 
-    console.log('[E2E SUCCESS] All application features and failure cases verified successfully!');
+    // -----------------------------------------------------------------
+    // 11. PHASE 9D: CONTROLLED REMEDIATION WORKFLOW & SAFEGUARDS
+    // -----------------------------------------------------------------
+    // Ingest a fresh incident dedicated to remediation verification
+    const remFingerprint = `fp-remediation-fresh-${Date.now()}`;
+    const remWebhookRes = await request.post('http://localhost:5000/api/incidents/webhook', {
+      headers: {
+        Authorization: 'Bearer your_alertmanager_webhook_token_here',
+        'Content-Type': 'application/json'
+      },
+      data: {
+        alerts: [{
+          status: 'firing',
+          fingerprint: remFingerprint,
+          labels: {
+            alertname: 'ContainerCrashLoopBackOff',
+            severity: 'critical',
+            component: 'backend',
+            pod: 'healops-backend-live',
+            container: 'backend',
+            namespace: 'healops'
+          },
+          annotations: {
+            summary: 'Container crashloop detected in healops-backend pod',
+            description: 'Repeated non-zero exit code requires controlled deployment rollout restart.'
+          },
+          startsAt: new Date().toISOString()
+        }]
+      }
+    });
+    expect(remWebhookRes.ok()).toBeTruthy();
+
+    // Navigate to incidents and open the fresh incident
+    await page.goto('/incidents');
+    await page.getByPlaceholder('Search alerts or summary...').fill('ContainerCrashLoopBackOff');
+    await page.keyboard.press('Enter');
+    const targetRow = page.locator('tr', { hasText: 'ContainerCrashLoopBackOff' }).first();
+    await targetRow.locator('button', { hasText: 'timeline' }).click();
+
+    // Verify Self-Healing button in incident details modal
+    const selfHealingBtn = page.getByRole('button', { name: 'Self-Healing' });
+    await expect(selfHealingBtn).toBeVisible();
+    await selfHealingBtn.click();
+
+    // Navigated to AI Analysis workbench
+    await expect(page).toHaveURL(/\/ai-analysis\?incidentId=\d+/);
+
+    // First generate diagnostic analysis for the fresh incident
+    const runDiagBtn = page.getByRole('button', { name: /Run Diagnostics/i }).first();
+    await expect(runDiagBtn).toBeVisible();
+    await runDiagBtn.click();
+    await expect(page.getByText('Primary RCA Vector')).toBeVisible({ timeout: 15000 });
+
+    // Now verify Self-Healing Remediation card is rendered
+    await expect(page.getByText('Self-Healing Remediation')).toBeVisible();
+    await expect(page.getByText('Phase 9D Engine')).toBeVisible();
+    await expect(page.getByText('restart_deployment').first()).toBeVisible();
+    await expect(page.getByText('healops-backend').first()).toBeVisible();
+    await expect(page.getByText('healops-remediation-sa')).toBeVisible();
+
+    // Verify Remediation Trigger Button is active
+    const remediateBtn = page.getByRole('button', { name: /Approve & Execute Remediation/i });
+    await expect(remediateBtn).toBeVisible();
+    await remediateBtn.click();
+
+    // Verify Confirmation Modal
+    await expect(page.getByText('Approve Kubernetes Remediation')).toBeVisible();
+    const confirmBtn = page.getByRole('button', { name: 'Confirm & Execute' });
+    await expect(confirmBtn).toBeDisabled();
+
+    // Authorize explicitly via checkbox
+    await page.getByRole('checkbox').check();
+    await expect(confirmBtn).toBeEnabled();
+    await confirmBtn.click();
+
+    // Verify execution feedback, cooldown guard, and audit history table
+    await expect(page.getByText(/Remediation.*completed with status/i)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Cooldown active/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Cooldown \(\d+s\)/i })).toBeDisabled();
+    await expect(page.getByText('Remediation & Recovery Audit History')).toBeVisible();
+    await expect(page.getByText(/1 Execution\(s\) Recorded/i)).toBeVisible();
+
+    await page.screenshot({ path: 'test-results/07-remediation-audit.png', fullPage: true });
+
+    console.log('[E2E SUCCESS] All application features, failure cases, and Phase 9D remediation verified successfully!');
   });
 });

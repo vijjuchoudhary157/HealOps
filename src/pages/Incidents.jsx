@@ -583,11 +583,17 @@ export default function Incidents() {
                       const isAckEvt = evt.event_type === 'acknowledged';
                       const isResEvt = evt.event_type === 'resolved';
                       const isReopenedEvt = evt.event_type === 'reopened';
+                      const isRemediationOk = evt.event_type === 'remediation_succeeded';
+                      const isRemediationFail = evt.event_type === 'remediation_failed';
+                      const isRemediationStart = evt.event_type === 'remediation_started';
 
                       return (
                         <div key={evt.id || idx} className="relative flex flex-col gap-1">
                           {/* Dot marker on timeline */}
                           <div className={`absolute -left-[23px] top-1 w-3 h-3 rounded-full border-2 border-surface-container-low ${
+                            isRemediationOk ? 'bg-tertiary' :
+                            isRemediationFail ? 'bg-error' :
+                            isRemediationStart ? 'bg-primary animate-pulse' :
                             isFiringEvt ? 'bg-error' :
                             isAckEvt ? 'bg-[#f59e0b]' :
                             isResEvt ? 'bg-tertiary' :
@@ -596,7 +602,10 @@ export default function Incidents() {
 
                           <div className="flex items-center justify-between gap-2">
                             <span className="font-label-code-sm text-label-code-sm font-bold text-on-surface capitalize flex items-center gap-1.5">
-                              {evt.event_type}
+                              {isRemediationOk && <span className="material-symbols-outlined text-[15px] text-tertiary">verified</span>}
+                              {isRemediationFail && <span className="material-symbols-outlined text-[15px] text-error">cancel</span>}
+                              {isRemediationStart && <span className="material-symbols-outlined text-[15px] text-primary animate-spin">sync</span>}
+                              {evt.event_type.replace(/_/g, ' ')}
                             </span>
                             <span className="font-label-code-sm text-label-code-sm text-outline">
                               {formatDateTime(evt.created_at)}
@@ -644,6 +653,13 @@ export default function Incidents() {
                   >
                     <span className="material-symbols-outlined text-[16px]">psychology</span>
                     <span>Root Cause Analysis</span>
+                  </button>
+                  <button
+                    className="px-space-md py-1.5 rounded bg-primary text-on-primary hover:bg-primary/90 font-label-code-md text-label-code-md font-semibold flex items-center gap-1.5 transition-all shadow-sm"
+                    onClick={() => navigate(`/ai-analysis?incidentId=${selectedIncident.id}`)}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">healing</span>
+                    <span>Self-Healing</span>
                   </button>
                 </div>
 

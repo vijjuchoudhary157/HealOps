@@ -55,6 +55,31 @@ const runMigration = async () => {
 
     CREATE INDEX IF NOT EXISTS idx_incident_analyses_incident_id ON incident_analyses(incident_id);
     CREATE INDEX IF NOT EXISTS idx_incident_analyses_created_at ON incident_analyses(created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS incident_remediations (
+      id SERIAL PRIMARY KEY,
+      incident_id INTEGER NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+      action_type VARCHAR(100) NOT NULL,
+      target_deployment VARCHAR(100) NOT NULL,
+      namespace VARCHAR(100) NOT NULL,
+      requested_by VARCHAR(255) NOT NULL,
+      approval_timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+      execution_started_at TIMESTAMP WITH TIME ZONE,
+      execution_completed_at TIMESTAMP WITH TIME ZONE,
+      status VARCHAR(50) NOT NULL DEFAULT 'pending',
+      result_details JSONB DEFAULT '{}'::jsonb,
+      error_details TEXT,
+      recovery_verification JSONB DEFAULT '{}'::jsonb,
+      recovery_verified BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_remediations_incident_id ON incident_remediations(incident_id);
+    CREATE INDEX IF NOT EXISTS idx_remediations_status ON incident_remediations(status);
+    CREATE INDEX IF NOT EXISTS idx_remediations_created_at ON incident_remediations(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_remediations_cooldown ON incident_remediations(target_deployment, namespace, created_at DESC);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_remediations_active ON incident_remediations(target_deployment, namespace) WHERE status IN ('pending', 'executing');
   `;
 
   try {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { incidentsAPI, analysisAPI } from '../services/api';
+import { incidentsAPI, analysisAPI, remediationAPI } from '../services/api';
 
 export default function AIAnalysis() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -15,6 +15,15 @@ export default function AIAnalysis() {
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState('');
+
+  // Remediation states (Phase 9D)
+  const [remediations, setRemediations] = useState([]);
+  const [loadingRemediations, setLoadingRemediations] = useState(false);
+  const [remediating, setRemediating] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [authorizedChecked, setAuthorizedChecked] = useState(false);
+  const [remediationMsg, setRemediationMsg] = useState(null);
+  const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
   // 1. Fetch available incidents
   const fetchIncidentsList = useCallback(async () => {
@@ -68,7 +77,53 @@ export default function AIAnalysis() {
     }
   }, [selectedIncidentId, fetchAnalysisForIncident]);
 
-  // 3. Trigger / Regenerate Root Cause Analysis
+  // 3. Fetch remediations for currently selected incident
+  const fetchRemediationsForIncident = useCallback(async (id) => {
+    if (!id) return;
+    try {
+      setLoadingRemediations(true);
+      const data = await remediationAPI.getIncidentRemediations(id);
+      const list = data.remediations || [];
+      setRemediations(list);
+
+      // Check cooldown from latest remediation (180 seconds)
+      if (list.length > 0) {
+        const latest = list[0];
+        const lastTime = new Date(latest.completed_at || latest.created_at).getTime();
+        const diff = Math.floor((lastTime + 180000 - Date.now()) / 1000);
+        setCooldownSeconds(diff > 0 ? diff : 0);
+      } else {
+        setCooldownSeconds(0);
+      }
+    } catch (err) {
+      console.error(`Failed to load remediations for incident #${id}:`, err);
+    } finally {
+      setLoadingRemediations(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedIncidentId) {
+      fetchRemediationsForIncident(selectedIncidentId);
+    }
+  }, [selectedIncidentId, fetchRemediationsForIncident]);
+
+  // Cooldown countdown ticker
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return;
+    const interval = setInterval(() => {
+      setCooldownSeconds(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldownSeconds]);
+
+  // 4. Trigger / Regenerate Root Cause Analysis
   const handleRunAnalysis = async () => {
     if (!selectedIncidentId) return;
     try {
@@ -84,6 +139,46 @@ export default function AIAnalysis() {
       setError(err.message || 'Failed to generate root cause analysis');
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  // 5. Initiate and Execute Remediation (Phase 9D)
+  const handleInitiateRemediation = () => {
+    setRemediationMsg(null);
+    setAuthorizedChecked(false);
+    setShowConfirmModal(true);
+  };
+
+  const handleExecuteRemediation = async () => {
+    if (!selectedIncidentId || !authorizedChecked) return;
+    try {
+      setRemediating(true);
+      setShowConfirmModal(false);
+      setRemediationMsg(null);
+      const res = await remediationAPI.remediate(selectedIncidentId, {
+        approved: true,
+        action: 'restart_deployment',
+        target_name: 'healops-backend',
+        target_namespace: 'healops',
+      });
+      const st = res.remediation?.status;
+      const isSucceeded = st === 'succeeded';
+      setRemediationMsg({
+        type: isSucceeded ? 'success' : 'warning',
+        text: res.message || `Remediation completed with status: ${st}`,
+        remediation: res.remediation,
+      });
+      await fetchRemediationsForIncident(selectedIncidentId);
+      await fetchAnalysisForIncident(selectedIncidentId);
+    } catch (err) {
+      console.error('Remediation execution failed:', err);
+      setRemediationMsg({
+        type: 'error',
+        text: err.message || 'Remediation failed to execute',
+      });
+      await fetchRemediationsForIncident(selectedIncidentId);
+    } finally {
+      setRemediating(false);
     }
   };
 
@@ -507,8 +602,110 @@ export default function AIAnalysis() {
               </div>
             </div>
 
-            {/* RIGHT COLUMN: Recommended Corrective Actions (5 Cols) */}
+            {/* RIGHT COLUMN: Remediation Control & Recommended Actions (5 Cols) */}
             <div className="xl:col-span-5 flex flex-col gap-space-lg">
+              {/* 1. Controlled Self-Healing & Remediation Engine (Phase 9D) */}
+              <div className="bg-surface-container rounded p-space-md shadow-md flex flex-col border border-primary/20">
+                <div className="flex items-center justify-between pb-space-sm mb-space-sm border-b border-outline-variant/20">
+                  <div className="flex items-center gap-space-xs">
+                    <span className="material-symbols-outlined text-[20px] text-primary">healing</span>
+                    <h3 className="font-headline-md text-headline-md text-on-surface font-semibold">
+                      Self-Healing Remediation
+                    </h3>
+                  </div>
+                  <span className="px-2 py-0.5 rounded font-label-code-sm text-[11px] bg-primary/10 text-primary font-bold uppercase tracking-wider border border-primary/30">
+                    Phase 9D Engine
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-space-sm">
+                  {/* Remediation Target Details */}
+                  <div className="p-space-sm bg-surface-container-low rounded border border-outline-variant/15 flex flex-col gap-1.5 font-label-code-sm text-label-code-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-outline">Allowed Action:</span>
+                      <span className="text-on-surface font-mono font-semibold">restart_deployment</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-outline">Target Workload:</span>
+                      <span className="text-secondary font-mono font-semibold">healops-backend</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-outline">Namespace:</span>
+                      <span className="text-on-surface font-mono">healops</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-outline">RBAC ServiceAccount:</span>
+                      <span className="text-tertiary font-mono">healops-remediation-sa</span>
+                    </div>
+                  </div>
+
+                  {/* Status & Safeguard Notices */}
+                  {selectedIncident?.status === 'resolved' ? (
+                    <div className="p-2.5 rounded bg-surface-container-high border border-outline-variant/20 flex items-center gap-2 text-outline text-label-code-sm">
+                      <span className="material-symbols-outlined text-[18px] text-tertiary">check_circle</span>
+                      <span>Incident is resolved. Remediation execution is disabled.</span>
+                    </div>
+                  ) : cooldownSeconds > 0 ? (
+                    <div className="p-2.5 rounded bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-center gap-2 text-[#f59e0b] text-label-code-sm">
+                      <span className="material-symbols-outlined text-[18px] animate-pulse">timer</span>
+                      <span>Cooldown active. Next remediation permitted in <strong>{cooldownSeconds}s</strong>.</span>
+                    </div>
+                  ) : remediating ? (
+                    <div className="p-2.5 rounded bg-primary/10 border border-primary/30 flex items-center gap-2 text-primary text-label-code-sm">
+                      <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
+                      <span>Executing rolling restart &amp; verifying pod health...</span>
+                    </div>
+                  ) : (
+                    <div className="p-2 rounded bg-tertiary/10 border border-tertiary/30 flex items-center gap-2 text-tertiary text-label-code-sm">
+                      <span className="material-symbols-outlined text-[16px]">verified_user</span>
+                      <span>Human-in-the-loop authorization required before rollout.</span>
+                    </div>
+                  )}
+
+                  {/* Execution Feedback Message */}
+                  {remediationMsg && (
+                    <div className={`p-2.5 rounded text-label-code-sm flex flex-col gap-1 ${
+                      remediationMsg.type === 'success' ? 'bg-tertiary/15 text-tertiary border border-tertiary/40' :
+                      remediationMsg.type === 'warning' ? 'bg-[#f59e0b]/15 text-[#f59e0b] border border-[#f59e0b]/40' :
+                      'bg-error-container/40 text-error border border-error/40'
+                    }`}>
+                      <div className="flex items-center gap-1.5 font-bold">
+                        <span className="material-symbols-outlined text-[16px]">
+                          {remediationMsg.type === 'success' ? 'verified' : remediationMsg.type === 'warning' ? 'warning' : 'error'}
+                        </span>
+                        <span>{remediationMsg.text}</span>
+                      </div>
+                      {remediationMsg.remediation?.verification_details && (
+                        <div className="text-[11px] font-mono opacity-90 pl-5">
+                          Probe: {remediationMsg.remediation.verification_details.probe_endpoint || '/ready'} |
+                          Status: {remediationMsg.remediation.verification_details.probe_status || 200} |
+                          Latency: {remediationMsg.remediation.verification_details.probe_latency_ms || 0}ms
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Primary Trigger Button */}
+                  <button
+                    className={`w-full py-2.5 px-4 rounded font-label-code-md text-label-code-md font-semibold flex items-center justify-center gap-2 transition-all shadow-sm ${
+                      selectedIncident?.status === 'resolved' || cooldownSeconds > 0 || remediating
+                        ? 'bg-surface-container-high text-outline cursor-not-allowed opacity-60'
+                        : 'bg-primary text-on-primary hover:bg-primary/90 hover:shadow-primary/25 cursor-pointer'
+                    }`}
+                    onClick={handleInitiateRemediation}
+                    disabled={selectedIncident?.status === 'resolved' || cooldownSeconds > 0 || remediating}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {remediating ? 'sync' : 'restart_alt'}
+                    </span>
+                    <span>
+                      {remediating ? 'Remediating...' : cooldownSeconds > 0 ? `Cooldown (${cooldownSeconds}s)` : 'Approve & Execute Remediation'}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. Recommended Corrective Actions */}
               <div className="bg-surface-container rounded p-space-md shadow-md flex flex-col">
                 <div className="flex items-center justify-between pb-space-sm mb-space-sm border-b border-outline-variant/20">
                   <div className="flex items-center gap-space-xs">
@@ -562,7 +759,7 @@ export default function AIAnalysis() {
                 </div>
               </div>
 
-              {/* Diagnostics Audit Information */}
+              {/* 3. Diagnostics Audit Information */}
               <div className="p-space-md bg-surface-container-low rounded border border-outline-variant/20 flex flex-col gap-2 font-label-code-sm text-label-code-sm text-outline">
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-on-surface">Analysis Status:</span>
@@ -578,9 +775,192 @@ export default function AIAnalysis() {
                 </div>
                 <div className="pt-2 border-t border-outline-variant/15 text-[11px] text-on-surface-variant leading-normal">
                   Root cause analysis evaluates Prometheus time-series telemetry and incident event timelines.
-                  Autonomous self-healing recommendations are prepared for Phase 9D remediation policies.
+                  Autonomous self-healing recommendations are executed with least-privilege RBAC safeguards.
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Remediation Audit History (Phase 9D Full Width Section) */}
+          <div className="bg-surface-container rounded p-space-md shadow-md flex flex-col mt-space-lg">
+            <div className="flex items-center justify-between pb-space-sm mb-space-sm border-b border-outline-variant/20">
+              <div className="flex items-center gap-space-xs">
+                <span className="material-symbols-outlined text-[18px] text-secondary">history_edu</span>
+                <h3 className="font-headline-md text-headline-md text-on-surface font-semibold">
+                  Remediation &amp; Recovery Audit History
+                </h3>
+              </div>
+              <span className="font-label-code-sm text-label-code-sm text-outline">
+                {remediations.length} Execution(s) Recorded
+              </span>
+            </div>
+
+            {loadingRemediations ? (
+              <div className="flex items-center justify-center py-6 text-outline">
+                <span className="material-symbols-outlined animate-spin text-[24px]">sync</span>
+              </div>
+            ) : remediations.length === 0 ? (
+              <div className="p-space-md text-center text-outline font-body-sm italic">
+                No remediation actions executed for this incident yet.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left font-label-code-sm text-label-code-sm">
+                  <thead>
+                    <tr className="border-b border-outline-variant/15 text-outline text-[11px] uppercase tracking-wider">
+                      <th className="py-2 px-3">ID</th>
+                      <th className="py-2 px-3">Action</th>
+                      <th className="py-2 px-3">Target</th>
+                      <th className="py-2 px-3">Status</th>
+                      <th className="py-2 px-3">Recovery Verification</th>
+                      <th className="py-2 px-3">Approved By</th>
+                      <th className="py-2 px-3">Timestamp</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/10 text-on-surface">
+                    {remediations.map((rem) => {
+                      const isSuccess = rem.status === 'succeeded';
+                      const isFailed = rem.status === 'failed';
+                      const isExecuting = rem.status === 'executing';
+                      const isUnverified = rem.status === 'recovery_unverified';
+
+                      return (
+                        <tr key={rem.id} className="hover:bg-surface-container-low transition-colors">
+                          <td className="py-2.5 px-3 font-mono text-outline">#{rem.id}</td>
+                          <td className="py-2.5 px-3 font-mono font-medium">{rem.action}</td>
+                          <td className="py-2.5 px-3 font-mono text-secondary">
+                            {rem.target_name} ({rem.target_namespace})
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className={`px-2 py-0.5 rounded font-bold uppercase text-[11px] ${
+                              isSuccess ? 'bg-tertiary/20 text-tertiary' :
+                              isExecuting ? 'bg-primary/20 text-primary animate-pulse' :
+                              isUnverified ? 'bg-[#f59e0b]/20 text-[#f59e0b]' :
+                              'bg-error-container/40 text-error'
+                            }`}>
+                              {rem.status}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            {rem.recovery_verified ? (
+                              <span className="flex items-center gap-1 text-tertiary font-semibold">
+                                <span className="material-symbols-outlined text-[15px]">verified</span>
+                                Verified ({rem.verification_details?.probe_latency_ms || 0}ms)
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-outline">
+                                <span className="material-symbols-outlined text-[15px]">
+                                  {isFailed ? 'cancel' : 'hourglass_empty'}
+                                </span>
+                                {rem.error_message ? 'Failed' : 'Unverified'}
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-outline">{rem.approved_by || 'system'}</td>
+                          <td className="py-2.5 px-3 text-outline">{formatDateTime(rem.created_at)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Human-in-the-Loop Confirmation Modal (Phase 9D) */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-surface-container-low border border-outline-variant/30 rounded-lg max-w-lg w-full p-space-lg shadow-2xl flex flex-col gap-space-md animate-in fade-in zoom-in duration-150">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-space-sm border-b border-outline-variant/20">
+              <div className="flex items-center gap-space-xs text-primary">
+                <span className="material-symbols-outlined text-[24px]">shield_lock</span>
+                <h3 className="font-headline-md text-headline-md font-bold text-on-surface">
+                  Approve Kubernetes Remediation
+                </h3>
+              </div>
+              <button
+                className="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors"
+                onClick={() => setShowConfirmModal(false)}
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+
+            {/* Modal Details */}
+            <div className="flex flex-col gap-space-sm font-body-sm text-body-sm text-on-surface-variant">
+              <p>
+                You are about to authorize a live Kubernetes remediation action to resolve{' '}
+                <strong className="text-on-surface">Incident #INC-{selectedIncidentId}</strong>.
+              </p>
+
+              <div className="bg-surface-container-lowest p-space-sm rounded border border-outline-variant/15 flex flex-col gap-1.5 font-label-code-sm text-label-code-sm">
+                <div className="flex justify-between">
+                  <span className="text-outline">Action:</span>
+                  <span className="text-on-surface font-mono font-semibold">Rolling Restart</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-outline">Target Deployment:</span>
+                  <span className="text-secondary font-mono font-semibold">healops-backend</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-outline">Target Namespace:</span>
+                  <span className="text-on-surface font-mono">healops</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-outline">RBAC Credentials:</span>
+                  <span className="text-tertiary font-mono">healops-remediation-sa</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-outline">Verification Method:</span>
+                  <span className="text-on-surface font-mono">Rollout status + /ready probe</span>
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-start gap-2 text-[#f59e0b] text-[12px] leading-relaxed">
+                <span className="material-symbols-outlined text-[16px] mt-0.5 shrink-0">warning</span>
+                <span>
+                  This action triggers a Kubernetes Deployment rollout restart. The system will monitor rollout completion and verify readiness before confirming recovery.
+                </span>
+              </div>
+
+              {/* Explicit Approval Checkbox */}
+              <label className="flex items-start gap-2.5 pt-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 rounded border-outline-variant/50 text-primary focus:ring-primary w-4 h-4 cursor-pointer"
+                  checked={authorizedChecked}
+                  onChange={(e) => setAuthorizedChecked(e.target.checked)}
+                />
+                <span className="font-label-code-sm text-label-code-sm text-on-surface font-medium leading-tight">
+                  I explicitly authorize executing rolling restart for deployment{' '}
+                  <code className="text-secondary font-mono">healops-backend</code>.
+                </span>
+              </label>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-space-sm pt-space-sm border-t border-outline-variant/20">
+              <button
+                className="px-4 py-2 rounded bg-surface-container text-on-surface hover:bg-surface-container-high font-label-code-sm text-label-code-sm transition-colors"
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className={`px-4 py-2 rounded font-label-code-sm text-label-code-sm font-semibold flex items-center gap-1.5 transition-all shadow-sm ${
+                  !authorizedChecked || remediating
+                    ? 'bg-surface-container-high text-outline cursor-not-allowed opacity-50'
+                    : 'bg-primary text-on-primary hover:bg-primary/90 cursor-pointer'
+                }`}
+                onClick={handleExecuteRemediation}
+                disabled={!authorizedChecked || remediating}
+              >
+                <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                <span>Confirm &amp; Execute</span>
+              </button>
             </div>
           </div>
         </div>

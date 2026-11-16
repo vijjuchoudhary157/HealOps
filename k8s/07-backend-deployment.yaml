@@ -23,9 +23,10 @@ spec:
         app: healops-backend
         app.kubernetes.io/component: api
     spec:
+      serviceAccountName: healops-remediation-sa
       containers:
         - name: backend
-          image: healops-backend:v3
+          image: healops-backend:v4
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

@@ -3,6 +3,7 @@ const router = express.Router();
 const authenticate = require('../middleware/auth.middleware');
 const incidentsController = require('../controllers/incidents.controller');
 const analysisController = require('../controllers/analysis.controller');
+const remediationController = require('../controllers/remediation.controller');
 
 // Alertmanager Webhook (authenticated with ALERTMANAGER_WEBHOOK_TOKEN)
 router.post('/webhook', incidentsController.handleWebhook);
@@ -16,5 +17,9 @@ router.patch('/:id', authenticate, incidentsController.updateIncidentStatus);
 // Root Cause Analysis Endpoints (authenticated with User JWT)
 router.post('/:id/analyze', authenticate, analysisController.triggerAnalysis);
 router.get('/:id/analysis', authenticate, analysisController.getIncidentAnalysis);
+
+// Controlled Self-Healing & Remediation Endpoints (authenticated with User JWT)
+router.post('/:id/remediate', authenticate, remediationController.triggerIncidentRemediation);
+router.get('/:id/remediations', authenticate, remediationController.getIncidentRemediations);
 
 module.exports = router;

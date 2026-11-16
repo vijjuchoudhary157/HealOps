@@ -119,3 +119,28 @@ export const analysisAPI = {
   getAllAnalyses: () =>
     fetchWithAuth('/analysis', { method: 'GET' }),
 };
+
+export const remediationAPI = {
+  remediate: (incidentId, data = {}) =>
+    fetchWithAuth(`/incidents/${incidentId}/remediate`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getIncidentRemediations: (incidentId) =>
+    fetchWithAuth(`/incidents/${incidentId}/remediations`, {
+      method: 'GET',
+    }),
+
+  getAll: (params = {}) => {
+    const searchParams = new URLSearchParams();
+    if (params.limit) searchParams.set('limit', params.limit);
+    if (params.offset) searchParams.set('offset', params.offset);
+    if (params.status) searchParams.set('status', params.status);
+    const query = searchParams.toString();
+    return fetchWithAuth(`/remediations${query ? `?${query}` : ''}`, { method: 'GET' });
+  },
+
+  getById: (id) =>
+    fetchWithAuth(`/remediations/${id}`, { method: 'GET' }),
+};

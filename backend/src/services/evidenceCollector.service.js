@@ -160,8 +160,13 @@ async function collectEvidence(incident) {
   let prometheusReachable = false;
 
   const queryEntries = Object.entries(metricQueries);
-  for (const [key, meta] of queryEntries) {
-    const res = await queryPrometheus(meta.expr, queryTimestamp);
+  const queryPromises = queryEntries.map(async ([key, meta]) => {
+    const res = await queryPrometheus(meta.expr, queryTimestamp, 2000);
+    return { key, meta, res };
+  });
+
+  const queryResults = await Promise.all(queryPromises);
+  for (const { key, meta, res } of queryResults) {
     if (res.available) {
       prometheusReachable = true;
       if (res.result.length > 0) {

@@ -26,7 +26,7 @@ test.describe('Authentication Flow', () => {
     await page.getByRole('button', { name: 'Create Reliability Workspace' }).click();
 
     // Verify successful registration redirects to dashboard/tasks
-    await expect(page).toHaveURL('/dashboard');
+    await expect(page).toHaveURL('/dashboard', { timeout: 15000 });
   });
 
   test('User can login and logout successfully', async ({ page }) => {

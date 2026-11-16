@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: healops-remediation-sa
+  namespace: healops
+  labels:
+    app.kubernetes.io/name: healops-remediation-sa
+    app.kubernetes.io/part-of: healops
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: healops-backend-remediation-role
+  namespace: healops
+  labels:
+    app.kubernetes.io/name: healops-backend-remediation-role
+    app.kubernetes.io/part-of: healops
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["healops-backend"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: healops-backend-remediation-binding
+  namespace: healops
+  labels:
+    app.kubernetes.io/name: healops-backend-remediation-binding
+    app.kubernetes.io/part-of: healops
+subjects:
+  - kind: ServiceAccount
+    name: healops-remediation-sa
+    namespace: healops
+roleRef:
+  kind: Role
+  name: healops-backend-remediation-role
+  apiGroup: rbac.authorization.k8s.io

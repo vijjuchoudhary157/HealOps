@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth.routes');
 const tasksRoutes = require('./routes/tasks.routes');
 const incidentsRoutes = require('./routes/incidents.routes');
 const analysisRoutes = require('./routes/analysis.routes');
+const remediationRoutes = require('./routes/remediation.routes');
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/incidents', incidentsRoutes);
 app.use('/api/analysis', analysisRoutes);
+app.use('/api/remediations', remediationRoutes);
 
 // 404 Handler
 app.use((req, res, next) => {

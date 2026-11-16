@@ -619,4 +619,235 @@ describe('Incident Management & Alertmanager Webhook Flow', () => {
       expect(res.body.analyses[0]).toHaveProperty('probable_root_cause');
     });
   });
+
+  describe('Controlled Self-Healing & Remediation (Phase 9D)', () => {
+    it('POST /api/incidents/:id/remediate should reject unauthenticated requests', async () => {
+      const res = await request(app)
+        .post(`/api/incidents/${incidentId}/remediate`)
+        .send({ approved: true });
+      expect(res.statusCode).toEqual(401);
+    });
+
+    it('POST /api/incidents/:id/remediate should reject without explicit user approval', async () => {
+      const res = await request(app)
+        .post(`/api/incidents/${incidentId}/remediate`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ approved: false });
+      expect(res.statusCode).toEqual(400);
+      expect(res.body.error.message).toMatch(/approval is required/i);
+    });
+
+    it('POST /api/incidents/:id/remediate should reject unauthorized action', async () => {
+      const res = await request(app)
+        .post(`/api/incidents/${incidentId}/remediate`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ approved: true, action: 'delete_deployment' });
+      expect(res.statusCode).toEqual(400);
+      expect(res.body.error.message).toMatch(/Invalid remediation action/i);
+    });
+
+    it('POST /api/incidents/:id/remediate should reject unauthorized target deployment', async () => {
+      const res = await request(app)
+        .post(`/api/incidents/${incidentId}/remediate`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ approved: true, target: 'healops-frontend' });
+      expect(res.statusCode).toEqual(400);
+      expect(res.body.error.message).toMatch(/Invalid remediation target/i);
+    });
+
+    it('POST /api/incidents/:id/remediate should reject unauthorized namespace', async () => {
+      const res = await request(app)
+        .post(`/api/incidents/${incidentId}/remediate`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ approved: true, namespace: 'kube-system' });
+      expect(res.statusCode).toEqual(400);
+      expect(res.body.error.message).toMatch(/Invalid namespace/i);
+    });
+
+    it('POST /api/incidents/:id/remediate should reject remediation on resolved incident', async () => {
+      // Create and resolve an incident
+      const fpResolved = `fp-resolved-${Date.now()}`;
+      await request(app)
+        .post('/api/incidents/webhook')
+        .set('Authorization', `Bearer ${webhookToken}`)
+        .send({
+          alerts: [{
+            status: 'firing',
+            fingerprint: fpResolved,
+            labels: { alertname: 'TestResolvedAlert', severity: 'info' },
+            annotations: { summary: 'Alert to be resolved' }
+          }]
+        });
+
+      const listRes = await request(app)
+        .get(`/api/incidents?search=${fpResolved}`)
+        .set('Authorization', `Bearer ${userToken}`);
+      const resIncId = listRes.body.incidents[0].id;
+
+      // Mark it resolved
+      await request(app)
+        .patch(`/api/incidents/${resIncId}`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ status: 'resolved' });
+
+      const res = await request(app)
+        .post(`/api/incidents/${resIncId}/remediate`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ approved: true });
+
+      expect(res.statusCode).toEqual(400);
+      expect(res.body.error.message).toMatch(/resolved incident/i);
+    });
+
+    it('POST /api/incidents/:id/remediate should execute remediation with simulated k8s recovery', async () => {
+      const k8sClient = require('../src/services/k8sClient.service');
+      const isK8sSpy = jest.spyOn(k8sClient, 'isK8sAvailable').mockReturnValue(true);
+      const restartSpy = jest.spyOn(k8sClient, 'restartDeployment').mockResolvedValue({
+        metadata: { name: 'healops-backend' }
+      });
+      const rolloutSpy = jest.spyOn(k8sClient, 'pollDeploymentRollout').mockResolvedValue({
+        completed: true,
+        replicas: 1,
+        readyReplicas: 1,
+        updatedReplicas: 1,
+        unavailableReplicas: 0
+      });
+      const probeSpy = jest.spyOn(k8sClient, 'verifyReadinessProbe').mockResolvedValue({
+        verified: true,
+        statusCode: 200,
+        latencyMs: 14,
+        endpoint: 'http://127.0.0.1:5000/ready'
+      });
+
+      try {
+        const res = await request(app)
+          .post(`/api/incidents/${incidentId}/remediate`)
+          .set('Authorization', `Bearer ${userToken}`)
+          .send({ approved: true });
+
+        expect(res.statusCode).toEqual(201);
+        expect(res.body.status).toBe('succeeded');
+        expect(res.body.remediation).toBeDefined();
+        expect(res.body.remediation.incident_id).toEqual(incidentId);
+        expect(res.body.remediation.action_type).toBe('restart_deployment');
+        expect(res.body.remediation.target_deployment).toBe('healops-backend');
+        expect(res.body.remediation.namespace).toBe('healops');
+        expect(res.body.remediation.recovery_verified).toBe(true);
+      } finally {
+        isK8sSpy.mockRestore();
+        restartSpy.mockRestore();
+        rolloutSpy.mockRestore();
+        probeSpy.mockRestore();
+      }
+    });
+
+    it('POST /api/incidents/:id/remediate should enforce cooldown on subsequent requests', async () => {
+      const res = await request(app)
+        .post(`/api/incidents/${incidentId}/remediate`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ approved: true });
+
+      expect(res.statusCode).toEqual(429);
+      expect(res.body.error.message).toMatch(/cooldown active/i);
+    });
+
+    it('POST /api/incidents/:id/remediate should reject concurrent requests when execution is in progress', async () => {
+      // Temporarily mark an active record in progress
+      const insRes = await pool.query(
+        `INSERT INTO incident_remediations (
+          incident_id, action_type, target_deployment, namespace, requested_by,
+          approval_timestamp, execution_started_at, status
+        ) VALUES ($1, 'restart_deployment', 'healops-backend', 'healops', 'test-user', NOW(), NOW(), 'executing')
+        RETURNING id`,
+        [incidentId]
+      );
+      const activeId = insRes.rows[0].id;
+
+      try {
+        const res = await request(app)
+          .post(`/api/incidents/${incidentId}/remediate`)
+          .set('Authorization', `Bearer ${userToken}`)
+          .send({ approved: true });
+
+        expect(res.statusCode).toEqual(409);
+        expect(res.body.error.message).toMatch(/already executing|in progress/i);
+      } finally {
+        await pool.query('DELETE FROM incident_remediations WHERE id = $1', [activeId]);
+      }
+    });
+
+    it('POST /api/incidents/:id/remediate should record failure if readiness probe fails', async () => {
+      const k8sClient = require('../src/services/k8sClient.service');
+      const isK8sSpy = jest.spyOn(k8sClient, 'isK8sAvailable').mockReturnValue(true);
+      const restartSpy = jest.spyOn(k8sClient, 'restartDeployment').mockResolvedValue({
+        metadata: { name: 'healops-backend' }
+      });
+      const rolloutSpy = jest.spyOn(k8sClient, 'pollDeploymentRollout').mockResolvedValue({
+        completed: true,
+        replicas: 1
+      });
+      const probeSpy = jest.spyOn(k8sClient, 'verifyReadinessProbe').mockResolvedValue({
+        verified: false,
+        error: 'Readiness probe timed out'
+      });
+
+      // Clear any cooldown for this test
+      await pool.query(
+        `UPDATE incident_remediations SET status = 'failed' WHERE target_deployment = 'healops-backend'`
+      );
+
+      try {
+        const res = await request(app)
+          .post(`/api/incidents/${incidentId}/remediate`)
+          .set('Authorization', `Bearer ${userToken}`)
+          .send({ approved: true });
+
+        expect(res.statusCode).toEqual(201);
+        expect(res.body.status).toBe('recovery_unverified');
+        expect(res.body.remediation.recovery_verified).toBe(false);
+        expect(res.body.remediation.status).toBe('recovery_unverified');
+      } finally {
+        isK8sSpy.mockRestore();
+        restartSpy.mockRestore();
+        rolloutSpy.mockRestore();
+        probeSpy.mockRestore();
+      }
+    });
+
+    it('GET /api/incidents/:id/remediations should return remediation history for the incident', async () => {
+      const res = await request(app)
+        .get(`/api/incidents/${incidentId}/remediations`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.remediations).toBeInstanceOf(Array);
+      expect(res.body.remediations.length).toBeGreaterThan(0);
+      expect(res.body.remediations[0].target_deployment).toBe('healops-backend');
+    });
+
+    it('GET /api/remediations should list all remediations', async () => {
+      const res = await request(app)
+        .get('/api/remediations')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.remediations).toBeInstanceOf(Array);
+      expect(res.body.remediations.length).toBeGreaterThan(0);
+    });
+
+    it('GET /api/remediations/:id should return remediation details', async () => {
+      const listRes = await request(app)
+        .get(`/api/incidents/${incidentId}/remediations`)
+        .set('Authorization', `Bearer ${userToken}`);
+      const remId = listRes.body.remediations[0].id;
+
+      const res = await request(app)
+        .get(`/api/remediations/${remId}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.remediation).toBeDefined();
+      expect(res.body.remediation.id).toEqual(remId);
+    });
+  });
 });
