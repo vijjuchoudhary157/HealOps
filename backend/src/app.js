@@ -9,6 +9,7 @@ const sysRoutes = require('./routes/sys.routes');
 const authRoutes = require('./routes/auth.routes');
 const tasksRoutes = require('./routes/tasks.routes');
 const incidentsRoutes = require('./routes/incidents.routes');
+const analysisRoutes = require('./routes/analysis.routes');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use('/', sysRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', tasksRoutes);
 app.use('/api/incidents', incidentsRoutes);
+app.use('/api/analysis', analysisRoutes);
 
 // 404 Handler
 app.use((req, res, next) => {

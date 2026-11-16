@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { incidentsAPI } from '../services/api';
 
 export default function Incidents() {
+  const navigate = useNavigate();
   const [incidents, setIncidents] = useState([]);
   const [stats, setStats] = useState({ total: 0, by_status: {}, by_severity: {} });
   const [loading, setLoading] = useState(true);
@@ -636,6 +638,13 @@ export default function Incidents() {
                       <span>Mark Resolved</span>
                     </button>
                   )}
+                  <button
+                    className="px-space-md py-1.5 rounded bg-primary/20 text-primary hover:bg-primary/30 font-label-code-md text-label-code-md font-semibold flex items-center gap-1.5 transition-all border border-primary/40 shadow-sm"
+                    onClick={() => navigate(`/ai-analysis?incidentId=${selectedIncident.id}`)}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">psychology</span>
+                    <span>Root Cause Analysis</span>
+                  </button>
                 </div>
 
                 <button

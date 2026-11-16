@@ -53,6 +53,26 @@ const createTables = async () => {
 
     CREATE INDEX IF NOT EXISTS idx_incident_events_incident_id ON incident_events(incident_id);
     CREATE INDEX IF NOT EXISTS idx_incident_events_created_at ON incident_events(created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS incident_analyses (
+      id SERIAL PRIMARY KEY,
+      incident_id INTEGER NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+      analysis_type VARCHAR(50) NOT NULL,
+      provider VARCHAR(50) NOT NULL,
+      model VARCHAR(100),
+      probable_root_cause TEXT NOT NULL,
+      explanation TEXT NOT NULL,
+      evidence JSONB NOT NULL DEFAULT '{}'::jsonb,
+      recommended_actions JSONB NOT NULL DEFAULT '[]'::jsonb,
+      confidence VARCHAR(50) NOT NULL,
+      status VARCHAR(50) NOT NULL DEFAULT 'completed',
+      error_message TEXT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_incident_analyses_incident_id ON incident_analyses(incident_id);
+    CREATE INDEX IF NOT EXISTS idx_incident_analyses_created_at ON incident_analyses(created_at DESC);
   `;
 
   try {
@@ -66,6 +86,7 @@ const createTables = async () => {
 
 const dropTables = async () => {
   const queryText = `
+    DROP TABLE IF EXISTS incident_analyses;
     DROP TABLE IF EXISTS incident_events;
     DROP TABLE IF EXISTS incidents;
     DROP TABLE IF EXISTS tasks;

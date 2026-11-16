@@ -18,7 +18,7 @@ export default function Dashboard() {
             <span className="font-label-code-sm text-label-code-sm text-outline-variant">|</span>
             <span className="font-label-code-sm text-label-code-sm text-on-surface-variant font-mono">UTC 17:24:39</span>
           </div>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">Cluster: <span className="font-label-code-sm text-label-code-sm text-secondary">prod-us-east-1a</span> • Heuristic Auto-Mitigation: <span className="font-label-code-sm text-label-code-sm text-tertiary">ARMED</span></p>
+          <p className="font-body-sm text-body-sm text-on-surface-variant">Environment: <span className="font-label-code-sm text-label-code-sm text-secondary">local-docker-compose</span> • Self-Healing Engine: <span className="font-label-code-sm text-label-code-sm text-tertiary">ARMED</span></p>
         </div>
         {/* Actions & Time Filter */}
         <div className="flex items-center gap-space-sm flex-wrap">
@@ -97,7 +97,7 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-label-code-sm text-label-code-sm text-on-surface-variant">42ms p95</span>
-                <span className="font-label-code-sm text-label-code-sm px-1 py-0.2 rounded bg-surface-container text-secondary">3 Pods</span>
+                <span className="font-label-code-sm text-label-code-sm px-1 py-0.2 rounded bg-surface-container text-secondary">1 Container</span>
               </div>
             </div>
             <div className="flex items-center justify-between py-0.5">

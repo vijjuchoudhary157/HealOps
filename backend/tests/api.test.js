@@ -503,4 +503,120 @@ describe('Incident Management & Alertmanager Webhook Flow', () => {
       expect(res.body.by_severity).toHaveProperty('critical');
     });
   });
+
+  describe('AI & Diagnostic Root Cause Analysis (Phase 9C)', () => {
+    it('POST /api/incidents/:id/analyze should reject unauthenticated requests', async () => {
+      const res = await request(app).post('/api/incidents/1/analyze');
+      expect(res.statusCode).toEqual(401);
+    });
+
+    it('POST /api/incidents/:id/analyze should reject invalid incident ID', async () => {
+      const res = await request(app)
+        .post('/api/incidents/invalid-id/analyze')
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.statusCode).toEqual(400);
+      expect(res.body.error.message).toMatch(/Invalid incident ID/i);
+    });
+
+    it('POST /api/incidents/:id/analyze should return 404 for non-existent incident', async () => {
+      const res = await request(app)
+        .post('/api/incidents/999999/analyze')
+        .set('Authorization', `Bearer ${userToken}`);
+      expect(res.statusCode).toEqual(404);
+      expect(res.body.error.message).toMatch(/not found/i);
+    });
+
+    it('POST /api/incidents/:id/analyze should generate and store root cause analysis with evidence', async () => {
+      const res = await request(app)
+        .post(`/api/incidents/${incidentId}/analyze`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.statusCode).toEqual(201);
+      expect(res.body).toHaveProperty('analysis');
+      const analysis = res.body.analysis;
+
+      expect(analysis.incident_id).toEqual(incidentId);
+      expect(['ai', 'rule-based']).toContain(analysis.analysis_type);
+      expect(analysis.provider).toBeDefined();
+      expect(analysis.probable_root_cause).toBeDefined();
+      expect(typeof analysis.probable_root_cause).toBe('string');
+      expect(analysis.explanation).toBeDefined();
+      expect(analysis.confidence).toBeDefined();
+      expect(analysis.status).toBe('completed');
+
+      // Verify evidence structure
+      expect(analysis.evidence).toBeDefined();
+      expect(analysis.evidence).toHaveProperty('fault_domain');
+      expect(analysis.evidence).toHaveProperty('corroborating_metrics');
+
+      // Verify recommendations structure
+      expect(analysis.recommended_actions).toBeInstanceOf(Array);
+      expect(analysis.recommended_actions.length).toBeGreaterThan(0);
+      expect(analysis.recommended_actions[0]).toHaveProperty('action');
+      expect(analysis.recommended_actions[0]).toHaveProperty('priority');
+
+      // Verify timeline event was added
+      const detailRes = await request(app)
+        .get(`/api/incidents/${incidentId}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      const analysisEvent = detailRes.body.timeline.find(e => e.event_type === 'analysis_generated');
+      expect(analysisEvent).toBeDefined();
+      expect(analysisEvent.summary).toMatch(/analysis generated/i);
+    });
+
+    it('GET /api/incidents/:id/analysis should retrieve the latest stored analysis', async () => {
+      const res = await request(app)
+        .get(`/api/incidents/${incidentId}/analysis`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.incident_id).toEqual(incidentId);
+      expect(res.body.analysis).not.toBeNull();
+      expect(res.body.analysis.incident_id).toEqual(incidentId);
+      expect(res.body.analysis.status).toBe('completed');
+    });
+
+    it('GET /api/incidents/:id/analysis should return null analysis when none generated yet', async () => {
+      // Create a fresh incident without analysis
+      const fpFresh = `fp-no-analysis-${Date.now()}`;
+      await request(app)
+        .post('/api/incidents/webhook')
+        .set('Authorization', `Bearer ${process.env.ALERTMANAGER_WEBHOOK_TOKEN || 'test_webhook_token'}`)
+        .send({
+          alerts: [{
+            status: 'firing',
+            fingerprint: fpFresh,
+            labels: { alertname: 'TestFreshAlert', severity: 'warning' },
+            annotations: { summary: 'Fresh alert without analysis' }
+          }]
+        });
+
+      const listRes = await request(app)
+        .get(`/api/incidents?search=${fpFresh}`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      const freshId = listRes.body.incidents[0].id;
+
+      const res = await request(app)
+        .get(`/api/incidents/${freshId}/analysis`)
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.analysis).toBeNull();
+    });
+
+    it('GET /api/analysis should list recent analyses across incidents', async () => {
+      const res = await request(app)
+        .get('/api/analysis')
+        .set('Authorization', `Bearer ${userToken}`);
+
+      expect(res.statusCode).toEqual(200);
+      expect(res.body).toHaveProperty('analyses');
+      expect(res.body.analyses).toBeInstanceOf(Array);
+      expect(res.body.analyses.length).toBeGreaterThan(0);
+      expect(res.body.analyses[0]).toHaveProperty('alertname');
+      expect(res.body.analyses[0]).toHaveProperty('probable_root_cause');
+    });
+  });
 });

@@ -1,7 +1,590 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { incidentsAPI, analysisAPI } from '../services/api';
 
 export default function AIAnalysis() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const [incidents, setIncidents] = useState([]);
+  const [selectedIncidentId, setSelectedIncidentId] = useState(null);
+  const [selectedIncident, setSelectedIncident] = useState(null);
+  const [analysis, setAnalysis] = useState(null);
+
+  const [loadingIncidents, setLoadingIncidents] = useState(true);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [error, setError] = useState('');
+
+  // 1. Fetch available incidents
+  const fetchIncidentsList = useCallback(async () => {
+    try {
+      setLoadingIncidents(true);
+      const data = await incidentsAPI.getAll({ limit: 50 });
+      const list = data.incidents || [];
+      setIncidents(list);
+
+      // Determine initial incident to select
+      const paramId = searchParams.get('incidentId');
+      if (paramId) {
+        setSelectedIncidentId(parseInt(paramId, 10));
+      } else if (list.length > 0) {
+        setSelectedIncidentId(list[0].id);
+        setSearchParams({ incidentId: list[0].id.toString() }, { replace: true });
+      }
+    } catch (err) {
+      console.error('Failed to load incidents for analysis:', err);
+      setError('Failed to load incidents list. Please check backend connection.');
+    } finally {
+      setLoadingIncidents(false);
+    }
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    fetchIncidentsList();
+  }, [fetchIncidentsList]);
+
+  // 2. Fetch analysis for currently selected incident
+  const fetchAnalysisForIncident = useCallback(async (id) => {
+    if (!id) return;
+    try {
+      setLoadingAnalysis(true);
+      setError('');
+      const data = await analysisAPI.getIncidentAnalysis(id);
+      setSelectedIncident(data.incident);
+      setAnalysis(data.analysis || null);
+    } catch (err) {
+      console.error(`Failed to load analysis for incident #${id}:`, err);
+      setError(err.message || 'Failed to retrieve analysis');
+      setAnalysis(null);
+    } finally {
+      setLoadingAnalysis(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedIncidentId) {
+      fetchAnalysisForIncident(selectedIncidentId);
+    }
+  }, [selectedIncidentId, fetchAnalysisForIncident]);
+
+  // 3. Trigger / Regenerate Root Cause Analysis
+  const handleRunAnalysis = async () => {
+    if (!selectedIncidentId) return;
+    try {
+      setAnalyzing(true);
+      setError('');
+      const data = await analysisAPI.analyzeIncident(selectedIncidentId);
+      setAnalysis(data.analysis);
+      if (data.incident) {
+        setSelectedIncident(prev => ({ ...prev, ...data.incident }));
+      }
+    } catch (err) {
+      console.error('Analysis generation failed:', err);
+      setError(err.message || 'Failed to generate root cause analysis');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const handleSelectIncident = (idStr) => {
+    const id = parseInt(idStr, 10);
+    setSelectedIncidentId(id);
+    setSearchParams({ incidentId: id.toString() });
+  };
+
+  const formatDateTime = (isoStr) => {
+    if (!isoStr) return '—';
+    try {
+      const d = new Date(isoStr);
+      return d.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+    } catch {
+      return isoStr;
+    }
+  };
+
+  // Helper to extract confidence percentage number for circle gauge
+  const parseConfidenceScore = (confStr) => {
+    if (!confStr) return 85;
+    const match = confStr.match(/(\d+)%/);
+    if (match) return parseInt(match[1], 10);
+    if (confStr.toLowerCase().includes('high')) return 92;
+    if (confStr.toLowerCase().includes('medium')) return 75;
+    if (confStr.toLowerCase().includes('low')) return 50;
+    return 80;
+  };
+
+  const isAI = analysis?.analysis_type === 'ai';
+  const confidenceScore = parseConfidenceScore(analysis?.confidence);
+
   return (
-    <div dangerouslySetInnerHTML={{ __html: "<div class=\"flex flex-col w-full\">\n<!-- Top Meta Navigation & Executive Actions -->\n<div class=\"flex flex-col xl:flex-row xl:items-center justify-between gap-space-md mb-space-lg\">\n<div class=\"flex flex-col gap-space-xs\">\n<div class=\"flex items-center gap-space-xs font-label-code-sm text-label-code-sm text-outline\">\n<span class=\"hover:text-primary transition-colors cursor-pointer\">Incidents</span>\n<span class=\"\">/</span>\n<span class=\"hover:text-primary transition-colors cursor-pointer text-on-surface-variant\">INC-9482</span>\n<span class=\"\">/</span>\n<span class=\"text-secondary font-semibold\">AI Deep Root Cause Analysis</span>\n</div>\n<div class=\"flex flex-wrap items-center gap-space-sm pt-1\">\n<h1 class=\"font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight\">AI Incident Analysis: INC-9482</h1>\n<div class=\"flex items-center gap-space-xs px-2.5 py-1 bg-tertiary-container/30 text-tertiary rounded shadow-[0_0_10px_rgba(78,222,163,0.25)]\">\n<span class=\"material-symbols-outlined text-[15px] animate-spin\" style=\"animation-duration: 4s;\">check_circle</span>\n<span class=\"font-label-code-sm text-label-code-sm font-semibold tracking-wide uppercase\">Auto-Remediated</span>\n</div>\n<div class=\"flex items-center gap-space-xs px-2 py-1 bg-error-container/35 text-error rounded font-label-code-sm text-label-code-sm font-semibold\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-error animate-ping\"></span>\n<span class=\"\">P1 - HIGH SEVERITY</span>\n</div>\n<div class=\"flex items-center gap-space-xs px-2.5 py-1 bg-surface-container-high rounded border border-outline-variant/40 font-label-code-sm text-label-code-sm text-primary-fixed-dim\"><span class=\"material-symbols-outlined text-[15px] text-primary\">smart_toy</span><span class=\"\">AI Diagnostics (Mock Model Inference Engine)</span></div></div>\n</div>\n<!-- Executive Action Triggers -->\n<div class=\"flex flex-wrap items-center gap-space-sm\">\n<button class=\"flex items-center gap-space-xs px-3 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface text-body-sm font-medium rounded transition-all shadow-sm\">\n<span class=\"material-symbols-outlined text-[16px] text-secondary\">file_download</span>\n<span class=\"\">Export Postmortem (PDF/MD)</span>\n</button>\n<button class=\"flex items-center gap-space-xs px-3 py-1.5 bg-primary hover:bg-primary-fixed-dim text-on-primary font-headline-md text-body-sm rounded shadow-[0_0_14px_rgba(192,193,255,0.3)] transition-all\">\n<span class=\"material-symbols-outlined text-[16px]\">account_tree</span>\n<span class=\"\">Apply Fix to Terraform</span>\n</button>\n<button class=\"flex items-center gap-space-xs px-2.5 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface rounded transition-colors\" title=\"Submit feedback to neural tuning pipeline\">\n<span class=\"material-symbols-outlined text-[18px]\">thumbs_up_down</span>\n<span class=\"hidden sm:inline font-body-sm text-body-sm\">Feedback</span>\n</button>\n</div>\n</div>\n<!-- Incident Telemetry Overview Strip -->\n<div class=\"grid grid-cols-1 md:grid-cols-12 gap-space-md mb-space-lg\">\n<!-- Summary Core Note -->\n<div class=\"md:col-span-6 xl:col-span-5 bg-surface-container p-space-md rounded flex flex-col justify-between shadow-md relative overflow-hidden\">\n<div class=\"absolute -right-8 -top-8 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none\"></div>\n<div>\n<div class=\"flex items-center justify-between mb-space-xs\">\n<span class=\"font-label-code-sm text-label-code-sm uppercase tracking-wider text-secondary font-semibold\">Primary RCA Vector</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline-variant\">Triage Mode: Heuristic ML</span>\n</div>\n<p class=\"font-body-lg text-body-lg text-on-surface font-medium leading-snug\">\n          Pod <span class=\"font-label-code-md text-label-code-md text-secondary bg-surface-container-lowest px-1.5 py-0.5 rounded\">task-worker-7dfb</span> OOMKilled due to unthrottled batch payload ingestion during 10:00 UTC schedule.\n        </p>\n</div>\n<div class=\"pt-space-sm mt-space-sm flex flex-wrap items-center gap-x-space-md gap-y-1 font-label-code-sm text-label-code-sm text-on-surface-variant\">\n<div><span class=\"text-outline\">Service:</span> <span class=\"text-on-surface font-semibold\">task-worker-service</span></div>\n<div><span class=\"text-outline\">Cluster:</span> <span class=\"text-on-surface\">prod-us-east-1</span></div>\n<div><span class=\"text-outline\">Namespace:</span> <span class=\"text-on-surface\">default</span></div>\n</div>\n</div>\n<!-- AI Confidence Gauge -->\n<div class=\"md:col-span-3 xl:col-span-3 bg-surface-container p-space-md rounded flex items-center justify-between shadow-md relative\">\n<div class=\"flex flex-col justify-center\">\n<span class=\"font-label-code-sm text-label-code-sm uppercase tracking-wider text-outline font-semibold\">Inference Reliability</span>\n<div class=\"flex items-baseline gap-1 mt-1\">\n<span class=\"font-label-code-lg text-headline-xl text-primary font-bold tracking-tight\">98.4%</span>\n<span class=\"font-label-code-sm text-label-code-sm text-tertiary\">CONFIDENT</span>\n</div>\n<span class=\"font-body-sm text-body-sm text-on-surface-variant mt-1\">Kernel cgroup verified &amp; traces correlated</span>\n</div>\n<div class=\"relative flex items-center justify-center\">\n<svg class=\"w-16 h-16 transform -rotate-90\" viewBox=\"0 0 36 36\">\n<path class=\"text-surface-container-high\" d=\"M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3.5\"></path>\n<path class=\"text-secondary drop-shadow-[0_0_6px_rgba(76,215,246,0.5)]\" d=\"M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831\" fill=\"none\" stroke=\"currentColor\" stroke-dasharray=\"98.4, 100\" stroke-linecap=\"round\" stroke-width=\"3.5\"></path>\n</svg>\n<span class=\"absolute font-label-code-sm text-label-code-sm text-secondary font-bold\">98%</span>\n</div>\n</div>\n<!-- Detection to Recovery Metrics -->\n<div class=\"md:col-span-3 xl:col-span-4 bg-surface-container p-space-md rounded flex flex-col justify-between shadow-md\">\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm uppercase tracking-wider text-outline font-semibold\">Autonomous SLA Metrics</span>\n<span class=\"flex items-center gap-1 font-label-code-sm text-label-code-sm text-tertiary\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse\"></span>Zero Data Loss\n        </span>\n</div>\n<div class=\"grid grid-cols-3 gap-space-sm pt-space-xs\">\n<div class=\"flex flex-col\">\n<span class=\"font-body-sm text-body-sm text-on-surface-variant\">Detection Time</span>\n<span class=\"font-label-code-lg text-headline-md text-on-surface font-bold\">4.2<span class=\"text-body-sm font-normal text-outline\">s</span></span>\n<span class=\"font-label-code-sm text-label-code-sm text-tertiary\">-68% vs avg</span>\n</div>\n<div class=\"flex flex-col\">\n<span class=\"font-body-sm text-body-sm text-on-surface-variant\">Auto-Healing</span>\n<span class=\"font-label-code-lg text-headline-md text-secondary font-bold\">38<span class=\"text-body-sm font-normal text-outline\">s</span></span>\n<span class=\"font-label-code-sm text-label-code-sm text-secondary font-medium\">Auto-healed</span>\n</div>\n<div class=\"flex flex-col\">\n<span class=\"font-body-sm text-body-sm text-on-surface-variant\">Dropped Data</span>\n<span class=\"font-label-code-lg text-headline-md text-tertiary font-bold\">0<span class=\"text-body-sm font-normal text-outline\"> rec</span></span>\n<span class=\"font-label-code-sm text-label-code-sm text-tertiary\">Queues safe</span>\n</div>\n</div>\n</div>\n</div>\n<!-- Primary Intelligence Workbench: Two Columns -->\n<div class=\"grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start\">\n<!-- LEFT COLUMN: Diagnosis, Logs & Timeline (7 Cols) -->\n<div class=\"xl:col-span-7 flex flex-col gap-space-lg\">\n<!-- 1. Probable Cause Card (AI Diagnosis) -->\n<div class=\"bg-surface-container rounded p-space-md shadow-md\">\n<div class=\"flex items-center justify-between pb-space-sm mb-space-sm\">\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"material-symbols-outlined text-[18px] text-primary\">psychology</span>\n<h2 class=\"font-headline-md text-headline-md text-on-surface\">Probable Cause &amp; Fault Domain</h2>\n</div>\n<div class=\"flex items-center gap-1.5 px-2 py-0.5 bg-surface-container-high rounded text-on-surface-variant font-label-code-sm text-label-code-sm\"><span class=\"text-outline\">Model:</span><span class=\"text-primary font-semibold\">HealLLM-Ops-v3 (Mock • Ready for Claude / GPT-4o)</span></div>\n</div>\n<div class=\"bg-surface-container-lowest p-space-md rounded font-body-md text-body-md text-on-surface space-y-space-sm leading-relaxed\">\n<p class=\"\">\n            An abrupt memory ballooning condition manifested inside <code class=\"text-secondary bg-surface-container px-1 py-0.5 rounded font-label-code-sm\">TaskDecompressorWorker.process()</code>.\n            Payload chunk ingestion received batch gzip streams without memory boundary guards, causing heap allocation to exceed the pod container boundary of <span class=\"text-error font-semibold font-label-code-sm\">1024 MiB</span> within 1.3 seconds.\n          </p>\n<div class=\"bg-surface-container-high/50 p-space-sm rounded flex items-center justify-between\">\n<div class=\"flex items-center gap-space-sm min-w-0\">\n<span class=\"material-symbols-outlined text-[20px] text-error flex-shrink-0\">commit</span>\n<div class=\"min-w-0 flex flex-col\">\n<span class=\"font-body-sm text-body-sm text-on-surface-variant\">Identified Culprit Commit</span>\n<span class=\"font-label-code-md text-label-code-md text-secondary truncate font-semibold\">\n                  #7f8a12 - 'Add streaming decompression for gzip tasks'\n                </span>\n</div>\n</div>\n<a class=\"px-2 py-1 bg-surface-container hover:bg-surface-container-highest text-on-surface font-label-code-sm text-label-code-sm rounded transition-colors whitespace-nowrap\" href=\"#\">\n              Inspect Diff →\n            </a>\n</div>\n</div>\n</div>\n<!-- 2. Evidence from Logs & Traces (Interactive Log Terminal) -->\n<div class=\"bg-surface-container rounded p-space-md shadow-md flex flex-col\">\n<div class=\"flex items-center justify-between pb-space-sm mb-space-sm\">\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"material-symbols-outlined text-[18px] text-secondary\">terminal</span>\n<h3 class=\"font-headline-md text-headline-md text-on-surface\">Correlated Evidence Stream</h3>\n</div>\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"w-2 h-2 rounded-full bg-secondary animate-ping\"></span>\n<span class=\"font-label-code-sm text-label-code-sm text-on-surface-variant font-medium\">Log Stream Synced</span>\n</div>\n</div>\n<!-- Terminal Shell UI -->\n<div class=\"bg-surface-container-lowest rounded p-space-md font-label-code-sm text-label-code-sm text-on-surface flex flex-col gap-1.5 overflow-x-auto shadow-inner\">\n<div class=\"flex items-center gap-2 text-outline pb-1 mb-1\">\n<div class=\"flex gap-1.5\">\n<div class=\"w-2.5 h-2.5 rounded-full bg-error/70\"></div>\n<div class=\"w-2.5 h-2.5 rounded-full bg-secondary-container/70\"></div>\n<div class=\"w-2.5 h-2.5 rounded-full bg-tertiary/70\"></div>\n</div>\n<span class=\"text-outline-variant font-label-code-sm text-label-code-sm\">cgroup_collector &amp; k8s-pod-journal stdout</span>\n</div>\n<div class=\"leading-5 py-0.5 hover:bg-surface-container-low px-1 rounded transition-colors\">\n<span class=\"text-outline\">[10:14:02.112]</span>\n<span class=\"text-secondary font-bold\">WARN</span>\n<span class=\"text-primary-fixed-dim\">[cgroup]</span>\n<span class=\"\">memory.current (1048576000) reached high watermark threshold (95%)</span>\n</div>\n<div class=\"leading-5 py-0.5 bg-error-container/20 px-1 rounded text-on-surface\">\n<span class=\"text-outline\">[10:14:03.442]</span>\n<span class=\"text-error font-bold\">ERROR</span>\n<span class=\"text-error-container text-on-error-container px-1 rounded\">[task-worker]</span>\n<span class=\"text-error font-semibold\">Heap allocation failure - Out of Memory (Process killed by kernel OOM-killer)</span>\n</div>\n<div class=\"leading-5 py-0.5 hover:bg-surface-container-low px-1 rounded transition-colors\">\n<span class=\"text-outline\">[10:14:04.010]</span>\n<span class=\"text-secondary font-bold\">INFO</span>\n<span class=\"text-secondary\">[HealOps-Agent]</span>\n<span class=\"\">Self-healing initiated: Expanding cgroup memory limit to 2Gi and spawning replacement pod <span class=\"text-primary-fixed\">task-worker-7dfb-9x</span></span>\n</div>\n<div class=\"leading-5 py-0.5 bg-tertiary-container/10 px-1 rounded text-on-surface\">\n<span class=\"text-outline\">[10:14:38.204]</span>\n<span class=\"text-tertiary font-bold\">SUCCESS</span>\n<span class=\"text-tertiary\">[HealOps-Agent]</span>\n<span class=\"text-tertiary font-medium\">Pod healthy, backlog resumed with throttled chunk size (50MB streaming buffer)</span>\n</div>\n</div>\n</div>\n<!-- 3. Interactive Vertical Timeline of Events -->\n<div class=\"bg-surface-container rounded p-space-md shadow-md\">\n<div class=\"flex items-center justify-between pb-space-sm mb-space-sm\">\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"material-symbols-outlined text-[18px] text-outline\">history_toggle_off</span>\n<h3 class=\"font-headline-md text-headline-md text-on-surface\">Execution &amp; Telemetry Timeline</h3>\n</div>\n<span class=\"font-label-code-sm text-label-code-sm text-outline\">Resolution Window: 42s total</span>\n</div>\n<div class=\"relative pl-6 space-y-space-md pt-2\">\n<!-- Continuous background trace indicator -->\n<div class=\"absolute left-2.5 top-3 bottom-3 w-0.5 bg-surface-container-highest\"></div>\n<!-- Event 1 -->\n<div class=\"relative flex items-start gap-space-md group\">\n<div class=\"absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-secondary-container ring-4 ring-surface-container flex items-center justify-center\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-surface\"></span>\n</div>\n<div class=\"flex flex-col\">\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"font-label-code-md text-label-code-md text-on-surface font-semibold\">10:13:58 UTC</span>\n<span class=\"px-1.5 py-0.2 bg-surface-container-high rounded font-label-code-sm text-label-code-sm text-outline\">Ingress Queue</span>\n</div>\n<p class=\"font-body-sm text-body-sm text-on-surface-variant mt-0.5\">Sudden ingress traffic batch burst (4,200 msgs/sec) queued into worker ingest pool.</p>\n</div>\n</div>\n<!-- Event 2 -->\n<div class=\"relative flex items-start gap-space-md group\">\n<div class=\"absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-secondary ring-4 ring-surface-container flex items-center justify-center\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-surface\"></span>\n</div>\n<div class=\"flex flex-col\">\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"font-label-code-md text-label-code-md text-secondary font-semibold\">10:14:02 UTC</span>\n<span class=\"px-1.5 py-0.2 bg-surface-container-high rounded font-label-code-sm text-label-code-sm text-secondary\">Prometheus</span>\n</div>\n<p class=\"font-body-sm text-body-sm text-on-surface-variant mt-0.5\">Threshold memory breach detected: worker consumed 98% of allocatable limit.</p>\n</div>\n</div>\n<!-- Event 3 -->\n<div class=\"relative flex items-start gap-space-md group\">\n<div class=\"absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-error ring-4 ring-surface-container flex items-center justify-center shadow-[0_0_8px_rgba(255,180,171,0.5)]\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-surface\"></span>\n</div>\n<div class=\"flex flex-col\">\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"font-label-code-md text-label-code-md text-error font-semibold\">10:14:03 UTC</span>\n<span class=\"px-1.5 py-0.2 bg-error-container/40 rounded font-label-code-sm text-label-code-sm text-error\">Pod Eviction</span>\n</div>\n<p class=\"font-body-sm text-body-sm text-error mt-0.5 font-medium\">Pod task-worker-7dfb crash (Linux kernel SIGKILL, exit code 137 OOM).</p>\n</div>\n</div>\n<!-- Event 4 -->\n<div class=\"relative flex items-start gap-space-md group\">\n<div class=\"absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-primary-container ring-4 ring-surface-container flex items-center justify-center\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-surface\"></span>\n</div>\n<div class=\"flex flex-col\">\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"font-label-code-md text-label-code-md text-primary font-semibold\">10:14:05 UTC</span>\n<span class=\"px-1.5 py-0.2 bg-primary/20 rounded font-label-code-sm text-label-code-sm text-primary\">Neural Isolation</span>\n</div>\n<p class=\"font-body-sm text-body-sm text-on-surface-variant mt-0.5\">AI Engine isolated decompression loop as root cause; mapped culprit to git commit #7f8a12.</p>\n</div>\n</div>\n<!-- Event 5 -->\n<div class=\"relative flex items-start gap-space-md group\">\n<div class=\"absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-secondary-container ring-4 ring-surface-container flex items-center justify-center\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-surface\"></span>\n</div>\n<div class=\"flex flex-col\">\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"font-label-code-md text-label-code-md text-secondary font-semibold\">10:14:06 UTC</span>\n<span class=\"px-1.5 py-0.2 bg-secondary-container/20 rounded font-label-code-sm text-label-code-sm text-secondary\">Autonomous Patch</span>\n</div>\n<p class=\"font-body-sm text-body-sm text-on-surface-variant mt-0.5\">HealOps autonomous policy executed dynamic vertical pod memory bump to 2.0Gi.</p>\n</div>\n</div>\n<!-- Event 6 -->\n<div class=\"relative flex items-start gap-space-md group\">\n<div class=\"absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-tertiary ring-4 ring-surface-container flex items-center justify-center shadow-[0_0_8px_rgba(78,222,163,0.5)]\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-surface\"></span>\n</div>\n<div class=\"flex flex-col\">\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"font-label-code-md text-label-code-md text-tertiary font-semibold\">10:14:40 UTC</span>\n<span class=\"px-1.5 py-0.2 bg-tertiary-container/30 rounded font-label-code-sm text-label-code-sm text-tertiary\">Resolved</span>\n</div>\n<p class=\"font-body-sm text-body-sm text-tertiary mt-0.5 font-medium\">Incident completely mitigated; 12 synthetic smoke tests passed at 100% throughput.</p>\n</div>\n</div>\n</div>\n</div>\n</div>\n<!-- RIGHT COLUMN: AI Recommendations & Autonomous DevOps Actions (5 Cols) -->\n<div class=\"xl:col-span-5 flex flex-col gap-space-lg\">\n<!-- 4. AI-Generated Recommendations Card -->\n<div class=\"bg-surface-container rounded p-space-md shadow-md flex flex-col\">\n<div class=\"flex items-center justify-between pb-space-sm mb-space-sm\">\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"material-symbols-outlined text-[18px] text-primary\">auto_awesome</span>\n<h3 class=\"font-headline-md text-headline-md text-on-surface\">Architectural Remediation</h3>\n</div>\n<span class=\"font-label-code-sm text-label-code-sm text-outline\">3 Prescriptions</span>\n</div>\n<div class=\"flex flex-col gap-space-sm\">\n<!-- Rec 1 -->\n<div class=\"p-space-sm bg-surface-container-low rounded hover:bg-surface-container-high/60 transition-colors flex flex-col gap-1\">\n<div class=\"flex items-center justify-between\">\n<span class=\"px-1.5 py-0.5 rounded bg-error-container/30 text-error font-label-code-sm text-label-code-sm font-semibold\">CRITICAL FIX</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline-variant\">Effort: ~30m</span>\n</div>\n<span class=\"font-body-md text-body-md font-semibold text-on-surface mt-0.5\">Enable backpressure streaming on task decompressor</span>\n<p class=\"font-body-sm text-body-sm text-on-surface-variant leading-snug\">\n              Prevent in-memory gzip expansion by pipelining buffered bytes directly to persistent disk spillover.\n            </p>\n</div>\n<!-- Rec 2 -->\n<div class=\"p-space-sm bg-surface-container-low rounded hover:bg-surface-container-high/60 transition-colors flex flex-col gap-1\">\n<div class=\"flex items-center justify-between\">\n<span class=\"px-1.5 py-0.5 rounded bg-primary-container/30 text-primary-fixed-dim font-label-code-sm text-label-code-sm font-semibold\">HELM VALUE</span>\n<span class=\"font-label-code-sm text-label-code-sm text-secondary font-medium\">Auto-PR Available</span>\n</div>\n<span class=\"font-body-md text-body-md font-semibold text-on-surface mt-0.5\">Increase default memory requests in Helm chart from 512Mi to 1.5Gi</span>\n<p class=\"font-body-sm text-body-sm text-on-surface-variant leading-snug\">\n              Guarantees the cgroup quota leaves ample headroom during parallel batch ingest spikes.\n            </p>\n</div>\n<!-- Rec 3 -->\n<div class=\"p-space-sm bg-surface-container-low rounded hover:bg-surface-container-high/60 transition-colors flex flex-col gap-1\">\n<div class=\"flex items-center justify-between\">\n<span class=\"px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-code-sm text-label-code-sm font-semibold\">SAFETY RULE</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline-variant\">Effort: 5m</span>\n</div>\n<span class=\"font-body-md text-body-md font-semibold text-on-surface mt-0.5\">Tune circuit breaker timeout to fail fast on batches &gt; 250MB</span>\n<p class=\"font-body-sm text-body-sm text-on-surface-variant leading-snug\">\n              Rejects payloads exceeding safety threshold at API gateway before queue ingress ingestion.\n            </p>\n</div>\n</div>\n</div>\n<!-- 5. Autonomous Actions Panel -->\n<div class=\"bg-surface-container rounded p-space-md shadow-md flex flex-col\">\n<div class=\"flex items-center justify-between pb-space-sm mb-space-sm\">\n<div class=\"flex items-center gap-space-xs\">\n<span class=\"material-symbols-outlined text-[18px] text-secondary\">smart_toy</span>\n<h3 class=\"font-headline-md text-headline-md text-on-surface\">Suggested DevOps Actions</h3>\n</div>\n<span class=\"px-2 py-0.5 bg-secondary-container/20 text-secondary rounded font-label-code-sm text-label-code-sm font-semibold\">Ready</span>\n</div>\n<div class=\"flex flex-col gap-space-sm\">\n<!-- Primary Action: Merge Hotfix PR -->\n<div class=\"bg-surface-container-lowest p-space-sm rounded flex flex-col gap-2\">\n<div class=\"flex items-center justify-between\">\n<div class=\"flex items-center gap-1.5\">\n<span class=\"material-symbols-outlined text-[16px] text-tertiary\">call_merge</span>\n<span class=\"font-label-code-md text-label-code-md text-on-surface font-semibold\">Hotfix PR #412 Generated</span>\n</div>\n<span class=\"font-label-code-sm text-label-code-sm text-tertiary\">Branch: healops-patch-412</span>\n</div>\n<div class=\"bg-surface-container p-space-xs rounded font-label-code-sm text-label-code-sm text-on-surface-variant\">\n<span class=\"text-error\">- buffer.readAll()</span><br>\n<span class=\"text-tertiary\">+ buffer.streamPipe({ maxChunkSize: '50mb' })</span>\n</div>\n<button class=\"w-full py-2 bg-tertiary-container hover:bg-tertiary text-on-tertiary-container font-headline-md text-body-sm rounded flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(78,222,163,0.3)] transition-all\">\n<span class=\"material-symbols-outlined text-[18px]\">verified</span>\n<span class=\"\">Merge Auto-Generated Hotfix PR #412</span>\n</button>\n</div>\n<!-- Secondary Action: Rollback -->\n<div class=\"flex items-center justify-between p-space-sm bg-surface-container-low rounded hover:bg-surface-container-high transition-colors\">\n<div class=\"flex items-center gap-space-sm\">\n<span class=\"material-symbols-outlined text-[18px] text-outline\">history</span>\n<div class=\"flex flex-col\">\n<span class=\"font-body-md text-body-md font-medium text-on-surface\">Rollback to stable deployment</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline\">Target: release v2.3.9</span>\n</div>\n</div>\n<button class=\"px-3 py-1 bg-surface-container hover:bg-surface-container-highest text-on-surface font-label-code-sm text-label-code-sm rounded transition-colors\">\n              Execute\n            </button>\n</div>\n<!-- Secondary Action: Update Alert -->\n<div class=\"flex items-center justify-between p-space-sm bg-surface-container-low rounded hover:bg-surface-container-high transition-colors\">\n<div class=\"flex items-center gap-space-sm\">\n<span class=\"material-symbols-outlined text-[18px] text-outline\">notification_important</span>\n<div class=\"flex flex-col\">\n<span class=\"font-body-md text-body-md font-medium text-on-surface\">Prometheus memory alert update</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline\">Lower threshold trigger to 85%</span>\n</div>\n</div>\n<button class=\"px-3 py-1 bg-surface-container hover:bg-surface-container-highest text-on-surface font-label-code-sm text-label-code-sm rounded transition-colors\">\n              Update Rule\n            </button>\n</div>\n<!-- Secondary Action: Chaos Regression -->\n<div class=\"flex items-center justify-between p-space-sm bg-surface-container-low rounded hover:bg-surface-container-high transition-colors\">\n<div class=\"flex items-center gap-space-sm\">\n<span class=\"material-symbols-outlined text-[18px] text-outline\">science</span>\n<div class=\"flex flex-col\">\n<span class=\"font-body-md text-body-md font-medium text-on-surface\">Automated chaos regression test</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline\">Inject 300MB burst payloads in staging</span>\n</div>\n</div>\n<button class=\"px-3 py-1 bg-surface-container hover:bg-surface-container-highest text-on-surface font-label-code-sm text-label-code-sm rounded transition-colors\">\n              Trigger Run\n            </button>\n</div>\n</div>\n</div>\n</div>\n</div>\n</div>" }} />
+    <div className="flex flex-col w-full">
+      {/* Top Meta Navigation & Executive Actions */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md mb-space-lg">
+        <div className="flex flex-col gap-space-xs">
+          <div className="flex items-center gap-space-xs font-label-code-sm text-label-code-sm text-outline">
+            <span
+              className="hover:text-primary transition-colors cursor-pointer"
+              onClick={() => navigate('/incidents')}
+            >
+              Incidents
+            </span>
+            <span>/</span>
+            <span className="text-on-surface-variant font-medium">
+              {selectedIncident ? `#INC-${selectedIncident.id} (${selectedIncident.alertname})` : 'Select Incident'}
+            </span>
+            <span>/</span>
+            <span className="text-secondary font-semibold">Root Cause Diagnostics</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-space-sm pt-1">
+            <h1 className="font-headline-xl text-headline-xl text-on-surface font-bold tracking-tight">
+              Incident Diagnostics {selectedIncident ? `#INC-${selectedIncident.id}` : ''}
+            </h1>
+
+            {/* Incident Status Pill */}
+            {selectedIncident && (
+              <div className={`flex items-center gap-space-xs px-2.5 py-1 rounded font-label-code-sm text-label-code-sm font-semibold tracking-wide uppercase ${
+                selectedIncident.status === 'firing'
+                  ? 'bg-error-container/40 text-error border border-error/30'
+                  : selectedIncident.status === 'acknowledged'
+                  ? 'bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/30'
+                  : 'bg-tertiary-container/30 text-tertiary border border-tertiary/30'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  selectedIncident.status === 'firing' ? 'bg-error animate-ping' :
+                  selectedIncident.status === 'acknowledged' ? 'bg-[#f59e0b]' : 'bg-tertiary'
+                }`}></span>
+                <span>{selectedIncident.status}</span>
+              </div>
+            )}
+
+            {/* Severity Pill */}
+            {selectedIncident && (
+              <div className={`flex items-center gap-space-xs px-2.5 py-1 rounded font-label-code-sm text-label-code-sm font-semibold uppercase ${
+                selectedIncident.severity === 'critical'
+                  ? 'bg-error text-black font-bold'
+                  : 'bg-[#f59e0b]/20 text-[#f59e0b]'
+              }`}>
+                <span>{selectedIncident.severity}</span>
+              </div>
+            )}
+
+            {/* Analysis Type Pill */}
+            {analysis && (
+              <div className={`flex items-center gap-space-xs px-2.5 py-1 rounded border font-label-code-sm text-label-code-sm font-medium ${
+                isAI
+                  ? 'bg-primary/10 text-primary border-primary/30'
+                  : 'bg-secondary/10 text-secondary border-secondary/30'
+              }`}>
+                <span className="material-symbols-outlined text-[15px]">
+                  {isAI ? 'smart_toy' : 'rule'}
+                </span>
+                <span>
+                  {isAI ? `AI-Generated (${analysis.provider} • ${analysis.model || 'LLM'})` : `Rule-Based Diagnostic (${analysis.provider})`}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Executive Action Controls & Incident Selector */}
+        <div className="flex flex-wrap items-center gap-space-sm">
+          {/* Incident Selector Dropdown */}
+          <div className="flex items-center gap-2 bg-surface-container px-3 py-1.5 rounded border border-outline-variant/30">
+            <span className="font-label-code-sm text-label-code-sm text-outline">Target:</span>
+            <select
+              value={selectedIncidentId || ''}
+              onChange={(e) => handleSelectIncident(e.target.value)}
+              disabled={loadingIncidents || analyzing}
+              className="bg-transparent text-on-surface font-label-code-md text-label-code-md outline-none cursor-pointer"
+            >
+              {incidents.length === 0 && <option value="">No Incidents Found</option>}
+              {!incidents.some(i => i.id === selectedIncidentId) && selectedIncidentId && (
+                <option value={selectedIncidentId}>Unknown Incident #{selectedIncidentId}</option>
+              )}
+              {incidents.map(inc => (
+                <option key={inc.id} value={inc.id} className="bg-surface-container-high text-on-surface">
+                  #INC-{inc.id} - {inc.alertname} ({inc.status})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Trigger / Regenerate Button */}
+          <button
+            onClick={handleRunAnalysis}
+            disabled={!selectedIncidentId || analyzing || loadingAnalysis}
+            className="flex items-center gap-space-xs px-4 py-2 bg-primary hover:bg-primary-fixed-dim text-on-primary font-label-code-md text-label-code-md font-semibold rounded shadow-[0_0_14px_rgba(192,193,255,0.25)] transition-all disabled:opacity-50"
+          >
+            <span className={`material-symbols-outlined text-[18px] ${analyzing ? 'animate-spin' : ''}`}>
+              {analyzing ? 'refresh' : analysis ? 'sync' : 'psychology'}
+            </span>
+            <span>{analyzing ? 'Analyzing Incident...' : analysis ? 'Regenerate Analysis' : 'Run Diagnostics'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="mb-space-md p-space-md bg-error-container/30 border border-error/40 rounded flex items-center justify-between text-error">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[20px]">warning</span>
+            <span className="font-body-md text-body-md">{error}</span>
+          </div>
+          <button
+            onClick={() => setError('')}
+            className="text-error hover:text-on-error-container font-label-code-sm text-label-code-sm"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* Loading Skeleton */}
+      {(loadingAnalysis || analyzing) && (
+        <div className="p-space-xl bg-surface-container rounded flex flex-col items-center justify-center gap-space-md min-h-[300px]">
+          <span className="material-symbols-outlined text-[42px] text-primary animate-spin">
+            progress_activity
+          </span>
+          <p className="font-headline-sm text-headline-sm text-on-surface font-semibold">
+            {analyzing ? 'Collecting Prometheus Evidence & Generating Diagnostic Inference...' : 'Loading Root Cause Analysis...'}
+          </p>
+          <span className="font-body-sm text-body-sm text-on-surface-variant">
+            Querying container metrics, HTTP error rates, CPU throttling, and incident timeline...
+          </span>
+        </div>
+      )}
+
+      {/* Empty State: Incident has no analysis yet */}
+      {!loadingAnalysis && !analyzing && !analysis && (
+        <div className="p-space-xl bg-surface-container rounded flex flex-col items-center justify-center text-center gap-space-md min-h-[360px] border border-dashed border-outline-variant/40">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+            <span className="material-symbols-outlined text-[32px]">biotech</span>
+          </div>
+          <div className="flex flex-col gap-1 max-w-lg">
+            <h2 className="font-headline-lg text-headline-lg text-on-surface font-bold">
+              No Analysis Generated Yet
+            </h2>
+            <p className="font-body-md text-body-md text-on-surface-variant">
+              Incident {selectedIncident ? `#INC-${selectedIncident.id} (${selectedIncident.alertname})` : ''} has not been analyzed yet.
+              Click the button below to collect real-time telemetry from Prometheus and generate root cause diagnostics.
+            </p>
+          </div>
+          <button
+            onClick={handleRunAnalysis}
+            disabled={!selectedIncidentId}
+            className="flex items-center gap-space-xs px-5 py-2.5 bg-primary hover:bg-primary-fixed-dim text-on-primary font-label-code-md text-label-code-md font-semibold rounded shadow-md transition-all mt-2"
+          >
+            <span className="material-symbols-outlined text-[20px]">psychology</span>
+            <span>Run Incident Root Cause Diagnostics</span>
+          </button>
+        </div>
+      )}
+
+      {/* Analysis Content Workbench */}
+      {!loadingAnalysis && !analyzing && analysis && (
+        <div className="flex flex-col gap-space-lg">
+          {/* Telemetry Overview Strip */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-space-md">
+            {/* Primary RCA Vector */}
+            <div className="md:col-span-6 xl:col-span-5 bg-surface-container p-space-md rounded flex flex-col justify-between shadow-md relative overflow-hidden">
+              <div className="absolute -right-8 -top-8 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none"></div>
+              <div>
+                <div className="flex items-center justify-between mb-space-xs">
+                  <span className="font-label-code-sm text-label-code-sm uppercase tracking-wider text-secondary font-semibold">
+                    Primary RCA Vector
+                  </span>
+                  <span className="font-label-code-sm text-label-code-sm text-outline-variant">
+                    {isAI ? 'AI Neural Inference' : 'Deterministic Heuristic'}
+                  </span>
+                </div>
+                <p className="font-body-lg text-body-lg text-on-surface font-bold leading-snug">
+                  {analysis.probable_root_cause}
+                </p>
+              </div>
+
+              <div className="pt-space-sm mt-space-sm flex flex-wrap items-center gap-x-space-md gap-y-1 font-label-code-sm text-label-code-sm text-on-surface-variant border-t border-outline-variant/15">
+                <div>
+                  <span className="text-outline">Alert:</span>{' '}
+                  <span className="text-on-surface font-semibold">{selectedIncident?.alertname || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-outline">Target Pod:</span>{' '}
+                  <span className="text-secondary font-mono">{selectedIncident?.labels?.pod || selectedIncident?.labels?.instance || 'healops'}</span>
+                </div>
+                <div>
+                  <span className="text-outline">Namespace:</span>{' '}
+                  <span className="text-on-surface">{selectedIncident?.labels?.namespace || 'healops'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Confidence Gauge */}
+            <div className="md:col-span-3 xl:col-span-3 bg-surface-container p-space-md rounded flex items-center justify-between shadow-md relative">
+              <div className="flex flex-col justify-center">
+                <span className="font-label-code-sm text-label-code-sm uppercase tracking-wider text-outline font-semibold">
+                  Diagnostic Confidence
+                </span>
+                <div className="flex items-baseline gap-1 mt-1">
+                  <span className="font-label-code-lg text-headline-xl text-primary font-bold tracking-tight">
+                    {analysis.confidence}
+                  </span>
+                </div>
+                <span className="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                  {analysis.evidence?.corroborating_metrics?.length || 0} Telemetry Corroborations
+                </span>
+              </div>
+
+              <div className="relative flex items-center justify-center">
+                <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
+                  <path
+                    className="text-surface-container-high"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3.5"
+                  ></path>
+                  <path
+                    className="text-secondary drop-shadow-[0_0_6px_rgba(76,215,246,0.5)]"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeDasharray={`${confidenceScore}, 100`}
+                    strokeLinecap="round"
+                    strokeWidth="3.5"
+                  ></path>
+                </svg>
+                <span className="absolute font-label-code-sm text-label-code-sm text-secondary font-bold">
+                  {confidenceScore}%
+                </span>
+              </div>
+            </div>
+
+            {/* Analysis Metadata */}
+            <div className="md:col-span-3 xl:col-span-4 bg-surface-container p-space-md rounded flex flex-col justify-between shadow-md">
+              <div className="flex items-center justify-between">
+                <span className="font-label-code-sm text-label-code-sm uppercase tracking-wider text-outline font-semibold">
+                  Analysis Metadata
+                </span>
+                <span className="flex items-center gap-1 font-label-code-sm text-label-code-sm text-tertiary">
+                  <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                  Stored in PostgreSQL
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-space-sm pt-space-xs font-label-code-sm text-label-code-sm">
+                <div className="flex flex-col">
+                  <span className="text-outline">Engine Provider:</span>
+                  <span className="text-on-surface font-semibold capitalize">{analysis.provider}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-outline">Diagnostic Model:</span>
+                  <span className="text-secondary font-mono truncate">{analysis.model || 'standard'}</span>
+                </div>
+                <div className="flex flex-col col-span-2 pt-1 border-t border-outline-variant/15">
+                  <span className="text-outline">Analyzed At:</span>
+                  <span className="text-on-surface-variant">{formatDateTime(analysis.created_at)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Primary Intelligence Workbench: Two Columns */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
+            {/* LEFT COLUMN: Cause Explanation, Correlated Telemetry & Timeline (7 Cols) */}
+            <div className="xl:col-span-7 flex flex-col gap-space-lg">
+              {/* 1. Probable Cause & Fault Domain */}
+              <div className="bg-surface-container rounded p-space-md shadow-md">
+                <div className="flex items-center justify-between pb-space-sm mb-space-sm border-b border-outline-variant/20">
+                  <div className="flex items-center gap-space-xs">
+                    <span className="material-symbols-outlined text-[18px] text-primary">psychology</span>
+                    <h2 className="font-headline-md text-headline-md text-on-surface font-semibold">
+                      Probable Cause &amp; Fault Domain
+                    </h2>
+                  </div>
+                  <span className="font-label-code-sm text-label-code-sm text-outline">
+                    Fault Domain: {analysis.evidence?.fault_domain || 'Service / Pod'}
+                  </span>
+                </div>
+
+                <div className="bg-surface-container-lowest p-space-md rounded font-body-md text-body-md text-on-surface space-y-space-sm leading-relaxed">
+                  <p className="whitespace-pre-line text-on-surface/90">
+                    {analysis.explanation}
+                  </p>
+                </div>
+              </div>
+
+              {/* 2. Correlated Telemetry Evidence */}
+              <div className="bg-surface-container rounded p-space-md shadow-md flex flex-col">
+                <div className="flex items-center justify-between pb-space-sm mb-space-sm border-b border-outline-variant/20">
+                  <div className="flex items-center gap-space-xs">
+                    <span className="material-symbols-outlined text-[18px] text-secondary">analytics</span>
+                    <h3 className="font-headline-md text-headline-md text-on-surface font-semibold">
+                      Correlated Prometheus Signals
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-space-xs">
+                    <span className="w-2 h-2 rounded-full bg-secondary"></span>
+                    <span className="font-label-code-sm text-label-code-sm text-on-surface-variant font-medium">
+                      {analysis.evidence?.metrics_status || 'Prometheus Telemetry'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Evidence Metrics List */}
+                <div className="bg-surface-container-lowest rounded p-space-md font-label-code-sm text-label-code-sm text-on-surface flex flex-col gap-2">
+                  {analysis.evidence?.corroborating_metrics && analysis.evidence.corroborating_metrics.length > 0 ? (
+                    analysis.evidence.corroborating_metrics.map((metricStr, idx) => (
+                      <div key={idx} className="flex items-center gap-2 p-1.5 rounded hover:bg-surface-container-low transition-colors">
+                        <span className="material-symbols-outlined text-[16px] text-tertiary">check_circle</span>
+                        <span className="text-on-surface font-mono">{metricStr}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-outline p-2 italic">
+                      No live metric corroborations available (Prometheus query API unreachable in local environment).
+                    </div>
+                  )}
+
+                  {analysis.evidence?.alert_trigger_context && analysis.evidence.alert_trigger_context.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-outline-variant/15 flex flex-col gap-1.5">
+                      <span className="text-[11px] text-outline uppercase font-semibold">Alert Notification Payload:</span>
+                      {analysis.evidence.alert_trigger_context.map((ctxStr, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-on-surface-variant text-label-code-sm">
+                          <span className="material-symbols-outlined text-[14px] text-primary mt-0.5">info</span>
+                          <span>{ctxStr}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {analysis.evidence?.key_metrics && analysis.evidence.key_metrics.map((km, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-1.5 rounded hover:bg-surface-container-low transition-colors">
+                      <span className="material-symbols-outlined text-[16px] text-secondary">trending_up</span>
+                      <span className="text-on-surface font-mono">{km}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Correlated Incident Timeline */}
+              <div className="bg-surface-container rounded p-space-md shadow-md">
+                <div className="flex items-center justify-between pb-space-sm mb-space-sm border-b border-outline-variant/20">
+                  <div className="flex items-center gap-space-xs">
+                    <span className="material-symbols-outlined text-[18px] text-outline">history</span>
+                    <h3 className="font-headline-md text-headline-md text-on-surface font-semibold">
+                      Incident Timeline Correlation
+                    </h3>
+                  </div>
+                  <span className="font-label-code-sm text-label-code-sm text-outline">
+                    {analysis.evidence?.timeline_evidence?.length || 0} Events Captured
+                  </span>
+                </div>
+
+                <div className="bg-surface-container-lowest p-space-md rounded flex flex-col gap-2">
+                  {analysis.evidence?.timeline_evidence && analysis.evidence.timeline_evidence.length > 0 ? (
+                    analysis.evidence.timeline_evidence.map((tStr, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-on-surface-variant font-label-code-sm text-label-code-sm">
+                        <span className="material-symbols-outlined text-[15px] text-secondary mt-0.5">circle</span>
+                        <span className="leading-snug">{tStr}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-outline italic text-body-sm">
+                      No timeline events recorded during incident window.
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT COLUMN: Recommended Corrective Actions (5 Cols) */}
+            <div className="xl:col-span-5 flex flex-col gap-space-lg">
+              <div className="bg-surface-container rounded p-space-md shadow-md flex flex-col">
+                <div className="flex items-center justify-between pb-space-sm mb-space-sm border-b border-outline-variant/20">
+                  <div className="flex items-center gap-space-xs">
+                    <span className="material-symbols-outlined text-[18px] text-primary">auto_awesome</span>
+                    <h3 className="font-headline-md text-headline-md text-on-surface font-semibold">
+                      Recommended Corrective Actions
+                    </h3>
+                  </div>
+                  <span className="font-label-code-sm text-label-code-sm text-outline">
+                    {analysis.recommended_actions?.length || 0} Actions
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-space-sm">
+                  {(!analysis.recommended_actions || analysis.recommended_actions.length === 0) && (
+                    <span className="text-outline p-space-md italic">No specific recommendations provided.</span>
+                  )}
+
+                  {analysis.recommended_actions && analysis.recommended_actions.map((rec, idx) => {
+                    const isCritical = rec.priority === 'critical';
+                    const isHigh = rec.priority === 'high';
+
+                    return (
+                      <div
+                        key={idx}
+                        className="p-space-sm bg-surface-container-low rounded border border-outline-variant/15 hover:border-outline-variant/40 transition-all flex flex-col gap-1.5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className={`px-2 py-0.5 rounded font-label-code-sm text-label-code-sm font-semibold uppercase ${
+                            isCritical ? 'bg-error-container/40 text-error' :
+                            isHigh ? 'bg-[#f59e0b]/20 text-[#f59e0b]' :
+                            'bg-primary/20 text-primary'
+                          }`}>
+                            {rec.priority || 'RECOMMENDED'}
+                          </span>
+                          <span className="font-label-code-sm text-label-code-sm text-outline font-mono uppercase">
+                            TYPE: {rec.type || 'SRE'}
+                          </span>
+                        </div>
+
+                        <span className="font-body-md text-body-md font-bold text-on-surface mt-0.5">
+                          {rec.action}
+                        </span>
+
+                        <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                          {rec.description}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Diagnostics Audit Information */}
+              <div className="p-space-md bg-surface-container-low rounded border border-outline-variant/20 flex flex-col gap-2 font-label-code-sm text-label-code-sm text-outline">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-on-surface">Analysis Status:</span>
+                  <span className="text-tertiary capitalize">{analysis.status || 'completed'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Incident ID:</span>
+                  <span className="text-on-surface font-mono">#{analysis.incident_id}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Analysis Record ID:</span>
+                  <span className="text-on-surface font-mono">#{analysis.id}</span>
+                </div>
+                <div className="pt-2 border-t border-outline-variant/15 text-[11px] text-on-surface-variant leading-normal">
+                  Root cause analysis evaluates Prometheus time-series telemetry and incident event timelines.
+                  Autonomous self-healing recommendations are prepared for Phase 9D remediation policies.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

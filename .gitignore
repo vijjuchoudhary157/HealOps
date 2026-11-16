@@ -3,11 +3,11 @@ dist/
 .env
 playwright-report/
 test-results/
-playwright-report/
-test-results/
+scratch/
 
 # Kubernetes secrets - keep credentials out of Git
 k8s/01-postgres-secret.yaml
 k8s/06-backend-secret.yaml
 k8s/15-grafana-secret.yaml
 k8s/21-alertmanager-secret.yaml
+k8s/24-alertmanager-secret.yaml

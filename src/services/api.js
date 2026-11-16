@@ -108,3 +108,14 @@ export const incidentsAPI = {
       body: JSON.stringify({ status }),
     }),
 };
+
+export const analysisAPI = {
+  analyzeIncident: (incidentId) =>
+    fetchWithAuth(`/incidents/${incidentId}/analyze`, { method: 'POST' }),
+
+  getIncidentAnalysis: (incidentId) =>
+    fetchWithAuth(`/incidents/${incidentId}/analysis`, { method: 'GET' }),
+
+  getAllAnalyses: () =>
+    fetchWithAuth('/analysis', { method: 'GET' }),
+};

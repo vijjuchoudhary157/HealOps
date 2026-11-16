@@ -1,6 +1,40 @@
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 
 export default function Sidebar() {
+  const [healthStatus, setHealthStatus] = useState({ backend: 'checking', db: 'checking' });
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchHealth = async () => {
+      try {
+        const res = await fetch('/ready');
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            setHealthStatus({
+              backend: data.status === 'ready' ? 'online' : 'degraded',
+              db: data.database === 'connected' ? 'connected' : 'disconnected'
+            });
+          }
+        } else {
+          if (isMounted) setHealthStatus({ backend: 'offline', db: 'unknown' });
+        }
+      } catch {
+        if (isMounted) setHealthStatus({ backend: 'offline', db: 'unknown' });
+      }
+    };
+
+    fetchHealth();
+    const timer = setInterval(fetchHealth, 10000);
+    return () => {
+      isMounted = false;
+      clearInterval(timer);
+    };
+  }, []);
+
+  const isHealthy = healthStatus.backend === 'online' && healthStatus.db === 'connected';
+
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
     { name: 'Tasks', path: '/tasks', icon: 'check_box' },
@@ -46,18 +80,24 @@ export default function Sidebar() {
       <div className="p-space-md m-space-sm bg-surface-container-low rounded flex flex-col gap-space-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <span className="inline-block w-2 h-2 rounded-full bg-tertiary"></span>
-            <span className="font-label-code-sm text-label-code-sm text-on-surface font-medium">24/24 Pods Healthy</span>
+            <span className={`inline-block w-2 h-2 rounded-full ${isHealthy ? 'bg-tertiary' : 'bg-error'}`}></span>
+            <span className="font-label-code-sm text-label-code-sm text-on-surface font-medium">
+              {isHealthy ? 'Backend & DB Healthy' : healthStatus.backend === 'checking' ? 'Checking Health...' : 'Degraded Health'}
+            </span>
           </div>
-          <span className="font-label-code-sm text-label-code-sm text-tertiary">100%</span>
+          <span className={`font-label-code-sm text-label-code-sm ${isHealthy ? 'text-tertiary font-bold' : 'text-error'}`}>
+            {isHealthy ? 'Live' : healthStatus.backend === 'checking' ? '...' : 'Alert'}
+          </span>
         </div>
         <div className="flex items-center justify-between pt-1">
-          <span className="font-label-code-sm text-label-code-sm text-on-surface-variant">SLA 30d</span>
-          <span className="font-label-code-sm text-label-code-sm text-secondary font-semibold">99.98% Uptime</span>
+          <span className="font-label-code-sm text-label-code-sm text-on-surface-variant">Environment</span>
+          <span className="font-label-code-sm text-label-code-sm text-secondary font-semibold">Docker Compose</span>
         </div>
-        <div className="pt-2 mt-1 flex items-center justify-between">
-          <span className="font-label-code-sm text-label-code-sm text-outline">v2.4.1-prod</span>
-          <span className="font-label-code-sm text-label-code-sm text-outline-variant">Autonomous</span>
+        <div className="pt-2 mt-1 flex items-center justify-between text-[11px] font-label-code-sm">
+          <span className="text-outline">Health Probe</span>
+          <span className={isHealthy ? 'text-tertiary font-semibold' : 'text-error'}>
+            {isHealthy ? 'Verified (/ready)' : 'Connection Failed'}
+          </span>
         </div>
       </div>
     </aside>

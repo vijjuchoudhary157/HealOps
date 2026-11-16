@@ -25,12 +25,14 @@ spec:
     spec:
       containers:
         - name: backend
-          image: healops-backend:v2.1
+          image: healops-backend:v3
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 5000
           env:
+            - name: PROMETHEUS_URL
+              value: "http://healops-prometheus.healops.svc.cluster.local:9090"
             - name: ALERTMANAGER_WEBHOOK_TOKEN
               valueFrom:
                 secretKeyRef:
