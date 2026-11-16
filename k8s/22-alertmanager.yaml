@@ -1,0 +1,131 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: healops
+  labels:
+    app.kubernetes.io/name: healops-alertmanager
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: healops
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+
+    route:
+      group_by: ['alertname', 'namespace', 'pod', 'container']
+      group_wait: 10s
+      group_interval: 30s
+      repeat_interval: 1h
+      receiver: 'healops-backend-webhook'
+
+    receivers:
+      - name: 'healops-backend-webhook'
+        webhook_configs:
+          - url: 'http://healops-backend.healops.svc.cluster.local:5000/api/incidents/webhook'
+            send_resolved: true
+            http_config:
+              bearer_token_file: /etc/alertmanager/secrets/webhook-token
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healops-alertmanager
+  namespace: healops
+  labels:
+    app.kubernetes.io/name: healops-alertmanager
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: healops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: healops-alertmanager
+  template:
+    metadata:
+      labels:
+        app: healops-alertmanager
+        app.kubernetes.io/component: monitoring
+    spec:
+      securityContext:
+        runAsUser: 65534
+        runAsGroup: 65534
+        runAsNonRoot: true
+        fsGroup: 65534
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.27.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--config.file=/etc/alertmanager/config/alertmanager.yml"
+            - "--storage.path=/alertmanager"
+            - "--web.listen-address=0.0.0.0:9093"
+            - "--cluster.listen-address="
+          ports:
+            - name: http
+              containerPort: 9093
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: 9093
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: 9093
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: alertmanager-config-volume
+              mountPath: /etc/alertmanager/config
+              readOnly: true
+            - name: alertmanager-secret-volume
+              mountPath: /etc/alertmanager/secrets
+              readOnly: true
+            - name: alertmanager-storage-volume
+              mountPath: /alertmanager
+      volumes:
+        - name: alertmanager-config-volume
+          configMap:
+            name: alertmanager-config
+        - name: alertmanager-secret-volume
+          secret:
+            secretName: alertmanager-secret
+            defaultMode: 292
+        - name: alertmanager-storage-volume
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: healops-alertmanager
+  namespace: healops
+  labels:
+    app.kubernetes.io/name: healops-alertmanager
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: healops
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9093
+      targetPort: 9093
+      protocol: TCP
+  selector:
+    app: healops-alertmanager

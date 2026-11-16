@@ -8,6 +8,7 @@ const errorHandler = require('./middleware/error.middleware');
 const sysRoutes = require('./routes/sys.routes');
 const authRoutes = require('./routes/auth.routes');
 const tasksRoutes = require('./routes/tasks.routes');
+const incidentsRoutes = require('./routes/incidents.routes');
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(metricsMiddleware);
 app.use('/', sysRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', tasksRoutes);
+app.use('/api/incidents', incidentsRoutes);
 
 // 404 Handler
 app.use((req, res, next) => {

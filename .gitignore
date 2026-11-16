@@ -10,3 +10,4 @@ test-results/
 k8s/01-postgres-secret.yaml
 k8s/06-backend-secret.yaml
 k8s/15-grafana-secret.yaml
+k8s/21-alertmanager-secret.yaml

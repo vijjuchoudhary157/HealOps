@@ -83,3 +83,28 @@ export const tasksAPI = {
       method: 'DELETE',
     }),
 };
+
+export const incidentsAPI = {
+  getAll: (params = {}) => {
+    const searchParams = new URLSearchParams();
+    if (params.page) searchParams.set('page', params.page);
+    if (params.limit) searchParams.set('limit', params.limit);
+    if (params.status && params.status !== 'all') searchParams.set('status', params.status);
+    if (params.severity && params.severity !== 'all') searchParams.set('severity', params.severity);
+    if (params.search) searchParams.set('search', params.search);
+    const query = searchParams.toString();
+    return fetchWithAuth(`/incidents${query ? `?${query}` : ''}`, { method: 'GET' });
+  },
+
+  getStats: () =>
+    fetchWithAuth('/incidents/stats', { method: 'GET' }),
+
+  getById: (id) =>
+    fetchWithAuth(`/incidents/${id}`, { method: 'GET' }),
+
+  updateStatus: (id, status) =>
+    fetchWithAuth(`/incidents/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+};

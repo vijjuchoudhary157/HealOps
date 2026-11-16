@@ -1,7 +1,654 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { incidentsAPI } from '../services/api';
 
 export default function Incidents() {
+  const [incidents, setIncidents] = useState([]);
+  const [stats, setStats] = useState({ total: 0, by_status: {}, by_severity: {} });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Filters & Pagination
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [severityFilter, setSeverityFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 1, limit: 10 });
+
+  // Detail & Timeline Modal State
+  const [selectedIncident, setSelectedIncident] = useState(null);
+  const [timeline, setTimeline] = useState([]);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [actionInProgress, setActionInProgress] = useState(false);
+
+  const fetchStats = async () => {
+    try {
+      const data = await incidentsAPI.getStats();
+      setStats(data);
+    } catch (err) {
+      console.error('Failed to load incident stats:', err);
+    }
+  };
+
+  const fetchIncidents = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await incidentsAPI.getAll({
+        page,
+        limit: 10,
+        status: statusFilter,
+        severity: severityFilter,
+        search: search.trim() || undefined,
+      });
+      setIncidents(data.incidents || []);
+      setPagination(data.pagination || { total: 0, totalPages: 1, limit: 10 });
+    } catch (err) {
+      setError(err.message || 'Failed to load incidents');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, statusFilter, severityFilter, search]);
+
+  useEffect(() => {
+    fetchStats();
+    fetchIncidents();
+  }, [fetchIncidents]);
+
+  const openDetailsModal = async (incidentId) => {
+    try {
+      setLoadingDetail(true);
+      setSelectedIncident(null);
+      const data = await incidentsAPI.getById(incidentId);
+      setSelectedIncident(data.incident);
+      setTimeline(data.timeline || []);
+    } catch (err) {
+      alert(err.message || 'Failed to load incident details');
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  const handleUpdateStatus = async (id, newStatus) => {
+    try {
+      setActionInProgress(true);
+      const updated = await incidentsAPI.updateStatus(id, newStatus);
+
+      // Update in table list
+      setIncidents(prev => prev.map(inc => inc.id === id ? updated.incident : inc));
+
+      // Update in modal if open
+      if (selectedIncident && selectedIncident.id === id) {
+        setSelectedIncident(updated.incident);
+        // Refresh timeline
+        const detailData = await incidentsAPI.getById(id);
+        setTimeline(detailData.timeline || []);
+      }
+
+      await fetchStats();
+    } catch (err) {
+      alert(err.message || `Failed to set incident status to ${newStatus}`);
+    } finally {
+      setActionInProgress(false);
+    }
+  };
+
+  const formatDateTime = (isoStr) => {
+    if (!isoStr) return '—';
+    try {
+      const d = new Date(isoStr);
+      return d.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+    } catch {
+      return isoStr;
+    }
+  };
+
+  const formatRelativeTime = (isoStr) => {
+    if (!isoStr) return '';
+    try {
+      const diffMs = Date.now() - new Date(isoStr).getTime();
+      const diffSec = Math.floor(diffMs / 1000);
+      if (diffSec < 60) return `${diffSec}s ago`;
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return `${diffMin}m ago`;
+      const diffHr = Math.floor(diffMin / 60);
+      if (diffHr < 24) return `${diffHr}h ago`;
+      return `${Math.floor(diffHr / 24)}d ago`;
+    } catch {
+      return '';
+    }
+  };
+
   return (
-    <div dangerouslySetInnerHTML={{ __html: "<div class=\"flex flex-col w-full\">\n<div class=\"flex flex-col gap-space-lg w-full\">\n<div class=\"flex flex-col xl:flex-row items-start xl:items-end justify-between gap-space-md pb-space-sm\">\n<div class=\"flex flex-col gap-1\">\n<div class=\"flex items-center gap-space-sm\">\n<span class=\"px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm bg-primary/10 text-primary uppercase font-bold tracking-wider\">Autonomous SRE Copilot</span>\n<span class=\"font-label-code-sm text-label-code-sm text-on-surface-variant flex items-center gap-1\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-tertiary\"></span> Live Telemetry Engine\n          </span>\n<span class=\"px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container text-outline flex items-center gap-1 border border-outline-variant/30\"><span class=\"material-symbols-outlined text-[13px] text-secondary\">dataset</span> Mock Telemetry &amp; Synthetic Incidents</span></div>\n<h1 class=\"font-headline-xl text-headline-xl text-on-surface tracking-tight\">Incident Management &amp; Self-Healing Log</h1>\n<p class=\"font-body-md text-body-md text-on-surface-variant\">Real-time incident triage, automated circuit-breakers, and neural root-cause postmortems.</p>\n</div>\n<div class=\"flex flex-wrap items-center gap-space-xs\">\n<a class=\"h-8 px-space-md rounded bg-surface-container hover:bg-surface-container-high text-on-surface flex items-center gap-1.5 font-label-code-sm text-label-code-sm transition-colors shadow-sm\" href=\"#slack\">\n<span class=\"material-symbols-outlined text-[16px] text-[#4cd7f6]\">forum</span>\n<span class=\"\">Incident Slack Channel</span>\n</a>\n<button class=\"h-8 px-space-md rounded bg-surface-container hover:bg-surface-container-high text-secondary flex items-center gap-1.5 font-label-code-sm text-label-code-sm transition-colors shadow-sm\" id=\"btn-chaos\">\n<span class=\"material-symbols-outlined text-[16px]\">shuffle</span>\n<span class=\"\">Simulation / Chaos Drill</span>\n</button>\n<button class=\"h-8 px-space-md rounded bg-error-container hover:bg-on-error text-on-error-container hover:text-white flex items-center gap-1.5 font-label-code-sm text-label-code-sm font-semibold transition-all shadow-md\" id=\"btn-declare\">\n<span class=\"material-symbols-outlined text-[16px]\">add_alert</span>\n<span class=\"\">Declare Incident</span>\n</button>\n</div>\n</div>\n<!-- Active Incident Critical Alert Banner -->\n<div class=\"relative overflow-hidden rounded-lg bg-surface-container-low shadow-xl p-space-md\"><div class=\"absolute inset-y-0 left-0 w-1.5 bg-secondary\"></div><div class=\"flex flex-col gap-space-md pl-space-xs\"><div class=\"flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-md\"><div class=\"flex items-start gap-space-md min-w-0\"><div class=\"p-2 rounded bg-secondary/10 text-secondary flex items-center justify-center shrink-0\"><span class=\"material-symbols-outlined text-[24px] animate-spin\">sync</span></div><div class=\"flex flex-col min-w-0\"><div class=\"flex flex-wrap items-center gap-space-sm mb-0.5\"><span class=\"font-label-code-md text-label-code-md font-bold text-secondary tracking-wide\">ACTIVE MITIGATION</span><span class=\"font-label-code-sm text-label-code-sm px-1.5 py-0.2 bg-error-container text-on-error-container font-bold rounded\">P0 - CRITICAL</span><span class=\"font-label-code-sm text-label-code-sm text-outline\">INC-2024-883</span></div><p class=\"font-body-md text-body-md text-on-surface font-medium leading-relaxed\">Database Connection Saturation on worker pool — <span class=\"text-secondary font-semibold\">Self-healing in progress</span> (Auto-scaling connection pool &amp; recycling stalled clients).</p></div></div><div class=\"flex items-center gap-space-lg shrink-0 w-full lg:w-auto justify-between lg:justify-end\"><div class=\"flex flex-col items-end\"><div class=\"flex items-center gap-1\"><span class=\"font-label-code-sm text-label-code-sm text-on-surface-variant\">ETA Recovery:</span><span class=\"font-label-code-lg text-label-code-lg font-bold text-secondary\" id=\"banner-timer\">35s</span></div><div class=\"w-28 h-1.5 bg-surface-container rounded-full overflow-hidden mt-1\"><div class=\"h-full bg-secondary transition-all duration-1000\" style=\"width: 68%;\"></div></div></div><button class=\"px-space-md py-1.5 rounded bg-secondary-container/20 text-secondary hover:bg-secondary-container/40 font-label-code-sm text-label-code-sm font-semibold transition-colors flex items-center gap-1\"><span class=\"\">Inspect Agent Trace</span><span class=\"material-symbols-outlined text-[14px]\">arrow_forward</span></button></div></div><div class=\"pt-2 border-t border-outline-variant/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-sm\"><span class=\"font-label-code-sm text-label-code-sm text-outline uppercase tracking-wider font-semibold flex items-center gap-1\"><span class=\"material-symbols-outlined text-[15px] text-secondary\">timeline</span> Incident Lifecycle State:</span><div class=\"flex items-center gap-1 sm:gap-2 flex-wrap\"><div class=\"flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-code-sm text-label-code-sm\"><span class=\"material-symbols-outlined text-[14px] text-tertiary\">check_circle</span><span class=\"\">1. Detected</span></div><span class=\"text-outline font-label-code-sm\">→</span><div class=\"flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-code-sm text-label-code-sm\"><span class=\"material-symbols-outlined text-[14px] text-tertiary\">check_circle</span><span class=\"\">2. Investigating</span></div><span class=\"text-outline font-label-code-sm\">→</span><div class=\"flex items-center gap-1 px-2 py-0.5 rounded bg-secondary-container/20 text-secondary font-label-code-sm text-label-code-sm font-bold ring-1 ring-secondary/50\"><span class=\"material-symbols-outlined text-[14px] animate-spin\">autorenew</span><span class=\"\">3. Recovering (Current)</span></div><span class=\"text-outline font-label-code-sm\">→</span><div class=\"flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-outline font-label-code-sm text-label-code-sm opacity-60\"><span class=\"material-symbols-outlined text-[14px]\">radio_button_unchecked</span><span class=\"\">4. Recovered</span></div></div></div></div></div>\n<!-- Telemetry MTTR Metric Cards & Visual Trendline -->\n<div class=\"grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md\">\n<!-- Card 1: MTTD -->\n<div class=\"bg-surface-container-low p-space-md rounded-lg shadow-sm flex flex-col justify-between\">\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm text-outline uppercase font-semibold\">Mean Time To Detect (MTTD)</span>\n<span class=\"material-symbols-outlined text-[18px] text-primary\">radar</span>\n</div>\n<div class=\"my-space-sm flex items-baseline gap-space-sm\">\n<span class=\"font-label-code-lg text-headline-xl font-bold text-on-surface\">14s</span>\n<span class=\"font-label-code-sm text-label-code-sm text-tertiary flex items-center\">\n<span class=\"material-symbols-outlined text-[14px]\">trending_down</span> -62% vs 30d\n          </span>\n</div>\n<div class=\"flex items-center justify-between pt-space-xs\">\n<span class=\"font-body-sm text-body-sm text-on-surface-variant\">eBPF Neural anomaly filter</span>\n<!-- Inline Sparkline: MTTD trend -->\n<svg class=\"w-20 h-5 text-primary overflow-visible\" fill=\"none\" viewBox=\"0 0 80 20\">\n<path d=\"M0 16 L12 14 L24 18 L36 12 L48 15 L60 8 L72 6 L80 4\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n</div>\n</div>\n<!-- Card 2: MTTR -->\n<div class=\"bg-surface-container-low p-space-md rounded-lg shadow-sm flex flex-col justify-between\">\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm text-outline uppercase font-semibold\">Mean Time To Recover (MTTR)</span>\n<span class=\"material-symbols-outlined text-[18px] text-tertiary\">timelapse</span>\n</div>\n<div class=\"my-space-sm flex items-baseline gap-space-sm\">\n<span class=\"font-label-code-lg text-headline-xl font-bold text-on-surface\">58s</span>\n<span class=\"font-label-code-sm text-label-code-sm text-tertiary flex items-center\">\n<span class=\"material-symbols-outlined text-[14px]\">arrow_downward</span> 3.4m faster\n          </span>\n</div>\n<div class=\"flex items-center justify-between pt-space-xs\">\n<span class=\"font-body-sm text-body-sm text-on-surface-variant\">Industry benchmark: ~45m</span>\n<!-- Inline Sparkline: MTTR -->\n<svg class=\"w-20 h-5 text-tertiary overflow-visible\" fill=\"none\" viewBox=\"0 0 80 20\">\n<path d=\"M0 18 L15 15 L30 11 L45 9 L60 6 L75 4 L80 3\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"></path>\n</svg>\n</div>\n</div>\n<!-- Card 3: Autonomous Recovery Rate -->\n<div class=\"bg-surface-container-low p-space-md rounded-lg shadow-sm flex flex-col justify-between\">\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm text-outline uppercase font-semibold\">Auto Recovery Rate</span>\n<span class=\"material-symbols-outlined text-[18px] text-secondary\">psychology</span>\n</div>\n<div class=\"my-space-sm flex items-baseline gap-space-sm\">\n<span class=\"font-label-code-lg text-headline-xl font-bold text-secondary\">91.6%</span>\n<span class=\"font-label-code-sm text-label-code-sm text-on-surface-variant\">44 / 48 incidents</span>\n</div>\n<div class=\"w-full bg-surface-container rounded-full h-1.5 overflow-hidden\">\n<div class=\"bg-secondary h-full rounded-full\" style=\"width: 91.6%\"></div>\n</div>\n</div>\n<!-- Card 4: SRE Interventions Required -->\n<div class=\"bg-surface-container-low p-space-md rounded-lg shadow-sm flex flex-col justify-between\">\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm text-outline uppercase font-semibold\">Human In The Loop</span>\n<span class=\"material-symbols-outlined text-[18px] text-on-surface-variant\">engineering</span>\n</div>\n<div class=\"my-space-sm flex items-baseline gap-space-sm\">\n<span class=\"font-label-code-lg text-headline-xl font-bold text-on-surface\">4</span>\n<span class=\"font-label-code-sm text-label-code-sm text-outline-variant\">escalations this week</span>\n</div>\n<div class=\"flex items-center justify-between pt-space-xs\">\n<span class=\"font-body-sm text-body-sm text-tertiary\">0 P0 manual overrides</span>\n<span class=\"font-label-code-sm text-label-code-sm text-on-surface-variant\">SLO: Safe</span>\n</div>\n</div>\n</div>\n<!-- Filters Strip: Status tabs & Severity chips -->\n<div class=\"flex flex-col gap-space-sm bg-surface-container-lowest p-space-md rounded-lg shadow-sm\">\n<div class=\"flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-md\">\n<!-- Status Tabs -->\n<div class=\"flex flex-wrap items-center gap-1 bg-surface-container-low p-1 rounded\"><button class=\"status-tab px-space-md py-1 rounded font-label-code-sm text-label-code-sm font-semibold bg-surface-container-high text-on-surface shadow-sm\" data-filter-status=\"all\">All Incidents <span class=\"ml-1 opacity-70\">48</span></button><button class=\"status-tab px-space-md py-1 rounded font-label-code-sm text-label-code-sm text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1\" data-filter-status=\"detected\"><span class=\"w-1.5 h-1.5 rounded-full bg-primary\"></span><span class=\"\">1. Detected</span> <span class=\"ml-1 px-1 rounded bg-primary/20 text-primary\">1</span></button><button class=\"status-tab px-space-md py-1 rounded font-label-code-sm text-label-code-sm text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1\" data-filter-status=\"investigating\"><span class=\"w-1.5 h-1.5 rounded-full bg-secondary\"></span><span class=\"\">2. Investigating</span> <span class=\"ml-1 px-1 rounded bg-secondary/20 text-secondary\">2</span></button><button class=\"status-tab px-space-md py-1 rounded font-label-code-sm text-label-code-sm text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1\" data-filter-status=\"recovering\"><span class=\"w-1.5 h-1.5 rounded-full bg-[#4cd7f6] animate-pulse\"></span><span class=\"\">3. Recovering</span> <span class=\"ml-1 px-1 rounded bg-secondary-container/30 text-secondary font-bold\">1</span></button><button class=\"status-tab px-space-md py-1 rounded font-label-code-sm text-label-code-sm text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1\" data-filter-status=\"recovered\"><span class=\"w-1.5 h-1.5 rounded-full bg-tertiary\"></span><span class=\"\">4. Recovered</span> <span class=\"ml-1 px-1 rounded bg-tertiary/20 text-tertiary\">44</span></button></div>\n<!-- Severity Filters -->\n<div class=\"flex flex-wrap items-center gap-1.5\">\n<span class=\"font-label-code-sm text-label-code-sm text-outline mr-1 uppercase\">Severity:</span>\n<button class=\"sev-pill px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-error-container/20 hover:bg-error-container text-error hover:text-on-error-container transition-colors flex items-center gap-1 font-semibold\" data-filter-sev=\"p0\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-error\"></span> P0 - Critical\n          </button>\n<button class=\"sev-pill px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container hover:bg-surface-container-high text-[#f59e0b] transition-colors flex items-center gap-1\" data-filter-sev=\"p1\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-[#f59e0b]\"></span> P1 - High\n          </button>\n<button class=\"sev-pill px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container hover:bg-surface-container-high text-[#eab308] transition-colors flex items-center gap-1\" data-filter-sev=\"p2\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-[#eab308]\"></span> P2 - Medium\n          </button>\n<button class=\"sev-pill px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container hover:bg-surface-container-high text-outline transition-colors flex items-center gap-1\" data-filter-sev=\"p3\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-outline\"></span> P3 - Low\n          </button>\n<button class=\"px-space-xs py-0.5 text-on-surface-variant hover:text-on-surface font-label-code-sm text-label-code-sm underline cursor-pointer ml-1\" id=\"reset-filters\">Reset</button>\n</div>\n</div>\n</div>\n<!-- Comprehensive Incidents Table -->\n<div class=\"bg-surface-container-lowest rounded-lg shadow-md overflow-hidden\">\n<div class=\"overflow-x-auto w-full\">\n<table class=\"w-full text-left text-body-sm font-body-sm text-on-surface min-w-[1240px]\">\n<thead class=\"bg-surface-container-low font-label-code-sm text-label-code-sm text-outline uppercase tracking-wider\">\n<tr>\n<th class=\"py-2.5 px-space-md\" scope=\"col\">Incident ID</th>\n<th class=\"py-2.5 px-space-sm\" scope=\"col\">Severity</th>\n<th class=\"py-2.5 px-space-md w-72\" scope=\"col\">Incident Summary</th>\n<th class=\"py-2.5 px-space-sm\" scope=\"col\">Affected Service</th>\n<th class=\"py-2.5 px-space-sm\" scope=\"col\">Status</th>\n<th class=\"py-2.5 px-space-sm\" scope=\"col\">Time Detected</th>\n<th class=\"py-2.5 px-space-sm\" scope=\"col\">MTTR</th>\n<th class=\"py-2.5 px-space-md\" scope=\"col\">Self-Healing Action Taken</th>\n<th class=\"py-2.5 px-space-md text-right\" scope=\"col\">Actions</th>\n</tr>\n</thead>\n<tbody class=\"divide-y-0\" id=\"incidents-tbody\">\n<!-- Row 1: Active Recovering -->\n<tr class=\"incident-row hover:bg-surface-container/60 transition-colors bg-surface-container-low/40\" data-sev=\"p0\" data-status=\"recovering\">\n<td class=\"py-space-md px-space-md font-label-code-md text-label-code-md text-primary font-bold\">\n                #INC-9482\n              </td>\n<td class=\"py-space-md px-space-sm\">\n<span class=\"px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm bg-error-container text-on-error-container font-bold flex items-center gap-1 w-fit\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-error animate-ping\"></span> CRITICAL\n                </span>\n</td>\n<td class=\"py-space-md px-space-md\">\n<div class=\"flex flex-col\">\n<span class=\"font-body-md text-body-md font-semibold text-on-surface\">Database Connection Saturation on worker pool</span>\n<span class=\"font-body-sm text-body-sm text-on-surface-variant truncate\">Pool exhausted at 100 max conns. Queries queuing &gt;2400ms.</span>\n</div>\n</td>\n<td class=\"py-space-md px-space-sm\">\n<span class=\"px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container-high text-on-surface flex items-center gap-1 w-fit\">\n<span class=\"material-symbols-outlined text-[13px] text-secondary\">database</span> postgres-primary\n                </span>\n</td>\n<td class=\"py-space-md px-space-sm\">\n<!-- Status: Recovering -->\n<span class=\"px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-secondary-container/20 text-secondary font-bold flex items-center gap-1.5 w-fit\">\n<span class=\"material-symbols-outlined text-[13px] animate-spin\">autorenew</span> Recovering\n                </span>\n</td>\n<td class=\"py-space-md px-space-sm font-label-code-sm text-label-code-sm text-on-surface-variant\">\n                10:14:02 UTC <span class=\"text-secondary\">(8m ago)</span>\n</td>\n<td class=\"py-space-md px-space-sm font-label-code-md text-label-code-md text-secondary font-semibold\">\n                In Flight (~35s)\n              </td>\n<td class=\"py-space-md px-space-md\">\n<div class=\"flex items-center gap-1.5 font-label-code-sm text-label-code-sm text-secondary bg-surface-container px-space-sm py-1 rounded\">\n<span class=\"material-symbols-outlined text-[14px]\">smart_toy</span>\n<span class=\"\">Auto-scaled pool to 250 + recycled idle workers</span>\n</div>\n</td>\n<td class=\"py-space-md px-space-md text-right\">\n<div class=\"flex items-center justify-end gap-1\">\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-primary font-label-code-sm text-label-code-sm\" title=\"View AI Root Cause Analysis\">\n<span class=\"material-symbols-outlined text-[16px]\">psychology</span>\n</button>\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-code-sm text-label-code-sm\" title=\"Telemetry Timeline\">\n<span class=\"material-symbols-outlined text-[16px]\">timeline</span>\n</button>\n</div>\n</td>\n</tr>\n<!-- Row 2: Investigating -->\n<tr class=\"incident-row hover:bg-surface-container/60 transition-colors\" data-sev=\"p1\" data-status=\"investigating\">\n<td class=\"py-space-md px-space-md font-label-code-md text-label-code-md text-primary font-bold\">\n                #INC-9481\n              </td>\n<td class=\"py-space-md px-space-sm\">\n<span class=\"px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm bg-[#f59e0b]/20 text-[#f59e0b] font-bold flex items-center gap-1 w-fit\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-[#f59e0b]\"></span> HIGH\n                </span>\n</td>\n<td class=\"py-space-md px-space-md\">\n<div class=\"flex flex-col\">\n<span class=\"font-body-md text-body-md font-semibold text-on-surface\">Redis replica sync lag exceeded 5000ms threshold</span>\n<span class=\"font-body-sm text-body-sm text-on-surface-variant truncate\">Cross-region latency spike causing async replication queue buildup.</span>\n</div>\n</td>\n<td class=\"py-space-md px-space-sm\">\n<span class=\"px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container-high text-on-surface flex items-center gap-1 w-fit\">\n<span class=\"material-symbols-outlined text-[13px] text-primary\">memory</span> redis-replica-0\n                </span>\n</td>\n<td class=\"py-space-md px-space-sm\">\n<!-- Status: Investigating -->\n<span class=\"px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-secondary/15 text-secondary font-medium flex items-center gap-1.5 w-fit\">\n<span class=\"material-symbols-outlined text-[13px] animate-spin\">progress_activity</span> Investigating\n                </span>\n</td>\n<td class=\"py-space-md px-space-sm font-label-code-sm text-label-code-sm text-on-surface-variant\">\n                09:58:11 UTC <span class=\"text-outline\">(24m ago)</span>\n</td>\n<td class=\"py-space-md px-space-sm font-label-code-md text-label-code-md text-outline\">\n                Estimating...\n              </td>\n<td class=\"py-space-md px-space-md\">\n<div class=\"flex items-center gap-1.5 font-label-code-sm text-label-code-sm text-on-surface-variant bg-surface-container px-space-sm py-1 rounded\">\n<span class=\"material-symbols-outlined text-[14px]\">alt_route</span>\n<span class=\"\">Cluster traffic rerouted to replica pool (in verification)</span>\n</div>\n</td>\n<td class=\"py-space-md px-space-md text-right\">\n<div class=\"flex items-center justify-end gap-1\">\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-primary font-label-code-sm text-label-code-sm\" title=\"View AI Root Cause Analysis\">\n<span class=\"material-symbols-outlined text-[16px]\">psychology</span>\n</button>\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-code-sm text-label-code-sm\" title=\"Telemetry Timeline\">\n<span class=\"material-symbols-outlined text-[16px]\">timeline</span>\n</button>\n</div>\n</td>\n</tr>\n<!-- Row 3: Detected -->\n<tr class=\"incident-row hover:bg-surface-container/60 transition-colors\" data-sev=\"p2\" data-status=\"detected\">\n<td class=\"py-space-md px-space-md font-label-code-md text-label-code-md text-primary font-bold\">\n                #INC-9480\n              </td>\n<td class=\"py-space-md px-space-sm\">\n<span class=\"px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm bg-[#eab308]/20 text-[#eab308] font-bold flex items-center gap-1 w-fit\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-[#eab308]\"></span> MEDIUM\n                </span>\n</td>\n<td class=\"py-space-md px-space-md\">\n<div class=\"flex flex-col\">\n<span class=\"font-body-md text-body-md font-semibold text-on-surface\">Memory leak detected in task worker pool</span>\n<span class=\"font-body-sm text-body-sm text-on-surface-variant truncate\">Continuous 45MB/min linear drift identified by autonomous profiler.</span>\n</div>\n</td>\n<td class=\"py-space-md px-space-sm\">\n<span class=\"px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container-high text-on-surface flex items-center gap-1 w-fit\">\n<span class=\"material-symbols-outlined text-[13px] text-tertiary\">tune</span> task-worker-v2\n                </span>\n</td>\n<td class=\"py-space-md px-space-sm\">\n<!-- Status: Detected -->\n<span class=\"px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-primary/20 text-primary font-semibold flex items-center gap-1.5 w-fit\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-primary animate-pulse\"></span> Detected\n                </span>\n</td>\n<td class=\"py-space-md px-space-sm font-label-code-sm text-label-code-sm text-on-surface-variant\">\n                09:41:40 UTC <span class=\"text-outline\">(41m ago)</span>\n</td>\n<td class=\"py-space-md px-space-sm font-label-code-md text-label-code-md text-outline\">\n                Heuristic Pending\n              </td>\n<td class=\"py-space-md px-space-md\">\n<div class=\"flex items-center gap-1.5 font-label-code-sm text-label-code-sm text-outline-variant bg-surface-container px-space-sm py-1 rounded\">\n<span class=\"material-symbols-outlined text-[14px]\">hourglass_top</span>\n<span class=\"\">Synthesizing rollback plan from commit history #88d1f</span>\n</div>\n</td>\n<td class=\"py-space-md px-space-md text-right\">\n<div class=\"flex items-center justify-end gap-1\">\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-primary font-label-code-sm text-label-code-sm\" title=\"View AI Root Cause Analysis\">\n<span class=\"material-symbols-outlined text-[16px]\">psychology</span>\n</button>\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-code-sm text-label-code-sm\" title=\"Telemetry Timeline\">\n<span class=\"material-symbols-outlined text-[16px]\">timeline</span>\n</button>\n</div>\n</td>\n</tr>\n<!-- Row 4: Recovered (Autonomous 42s) -->\n<tr class=\"incident-row hover:bg-surface-container/60 transition-colors\" data-sev=\"p0\" data-status=\"recovered\">\n<td class=\"py-space-md px-space-md font-label-code-md text-label-code-md text-primary font-bold\">\n                #INC-9479\n              </td>\n<td class=\"py-space-md px-space-sm\">\n<span class=\"px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm bg-error-container/40 text-error font-bold flex items-center gap-1 w-fit\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-error\"></span> CRITICAL\n                </span>\n</td>\n<td class=\"py-space-md px-space-md\">\n<div class=\"flex flex-col\">\n<span class=\"font-body-md text-body-md font-semibold text-on-surface\">Task queue consumer OOMKilled in namespace prod-tasks</span>\n<span class=\"font-body-sm text-body-sm text-on-surface-variant truncate\">Payload batch processing exceeded default cgroup memory limit (1Gi).</span>\n</div>\n</td>\n<td class=\"py-space-md px-space-sm\">\n<span class=\"px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container-high text-on-surface flex items-center gap-1 w-fit\">\n<span class=\"material-symbols-outlined text-[13px] text-secondary\">layers</span> task-worker-v2\n                </span>\n</td>\n<td class=\"py-space-md px-space-sm\">\n<!-- Status: Recovered -->\n<span class=\"px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-tertiary-container/30 text-tertiary font-medium flex items-center gap-1.5 w-fit\">\n<span class=\"material-symbols-outlined text-[13px]\">check_circle</span> Recovered\n                </span>\n</td>\n<td class=\"py-space-md px-space-sm font-label-code-sm text-label-code-sm text-on-surface-variant\">\n                08:12:19 UTC\n              </td>\n<td class=\"py-space-md px-space-sm font-label-code-md text-label-code-md text-tertiary font-semibold\">\n                42s <span class=\"text-outline font-normal\">(Auto)</span>\n</td>\n<td class=\"py-space-md px-space-md\">\n<div class=\"flex items-center gap-1.5 font-label-code-sm text-label-code-sm text-on-surface bg-surface-container px-space-sm py-1 rounded\">\n<span class=\"material-symbols-outlined text-[14px] text-tertiary\">check</span>\n<span class=\"\">K8s Pod restart + memory limit bump to 2Gi</span>\n</div>\n</td>\n<td class=\"py-space-md px-space-md text-right\">\n<div class=\"flex items-center justify-end gap-1\">\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-code-sm text-label-code-sm\" title=\"View AI Root Cause Analysis\">\n<span class=\"material-symbols-outlined text-[16px]\">psychology</span>\n</button>\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-tertiary font-label-code-sm text-label-code-sm\" title=\"Postmortem Complete\">\n<span class=\"material-symbols-outlined text-[16px]\">article</span>\n</button>\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-code-sm text-label-code-sm\" title=\"Telemetry Timeline\">\n<span class=\"material-symbols-outlined text-[16px]\">timeline</span>\n</button>\n</div>\n</td>\n</tr>\n<!-- Row 5: Recovered (Autonomous 1m 18s) -->\n<tr class=\"incident-row hover:bg-surface-container/60 transition-colors\" data-sev=\"p1\" data-status=\"recovered\">\n<td class=\"py-space-md px-space-md font-label-code-md text-label-code-md text-primary font-bold\">\n                #INC-9475\n              </td>\n<td class=\"py-space-md px-space-sm\">\n<span class=\"px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm bg-[#f59e0b]/20 text-[#f59e0b] font-bold flex items-center gap-1 w-fit\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-[#f59e0b]\"></span> HIGH\n                </span>\n</td>\n<td class=\"py-space-md px-space-md\">\n<div class=\"flex flex-col\">\n<span class=\"font-body-md text-body-md font-semibold text-on-surface\">Distributed deadlock on leader election key</span>\n<span class=\"font-body-sm text-body-sm text-on-surface-variant truncate\">Stale distributed lock prevented failover of scheduler controller.</span>\n</div>\n</td>\n<td class=\"py-space-md px-space-sm\">\n<span class=\"px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container-high text-on-surface flex items-center gap-1 w-fit\">\n<span class=\"material-symbols-outlined text-[13px] text-secondary\">security</span> auth-proxy\n                </span>\n</td>\n<td class=\"py-space-md px-space-sm\">\n<span class=\"px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-tertiary-container/30 text-tertiary font-medium flex items-center gap-1.5 w-fit\">\n<span class=\"material-symbols-outlined text-[13px]\">check_circle</span> Recovered\n                </span>\n</td>\n<td class=\"py-space-md px-space-sm font-label-code-sm text-label-code-sm text-on-surface-variant\">\n                Yesterday 14:22 UTC\n              </td>\n<td class=\"py-space-md px-space-sm font-label-code-md text-label-code-md text-tertiary font-semibold\">\n                1m 18s <span class=\"text-outline font-normal\">(Autonomous)</span>\n</td>\n<td class=\"py-space-md px-space-md\">\n<div class=\"flex items-center gap-1.5 font-label-code-sm text-label-code-sm text-on-surface bg-surface-container px-space-sm py-1 rounded\">\n<span class=\"material-symbols-outlined text-[14px] text-tertiary\">check</span>\n<span class=\"\">Stale lock cleared in Redis &amp; renewed TTL</span>\n</div>\n</td>\n<td class=\"py-space-md px-space-md text-right\">\n<div class=\"flex items-center justify-end gap-1\">\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-code-sm text-label-code-sm\" title=\"View AI Root Cause Analysis\">\n<span class=\"material-symbols-outlined text-[16px]\">psychology</span>\n</button>\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-tertiary font-label-code-sm text-label-code-sm\" title=\"Postmortem\">\n<span class=\"material-symbols-outlined text-[16px]\">article</span>\n</button>\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-code-sm text-label-code-sm\" title=\"Telemetry Timeline\">\n<span class=\"material-symbols-outlined text-[16px]\">timeline</span>\n</button>\n</div>\n</td>\n</tr>\n<!-- Row 6: Recovered (Manual SRE 4m 02s) -->\n<tr class=\"incident-row hover:bg-surface-container/60 transition-colors\" data-sev=\"p3\" data-status=\"recovered\">\n<td class=\"py-space-md px-space-md font-label-code-md text-label-code-md text-primary font-bold\">\n                #INC-9460\n              </td>\n<td class=\"py-space-md px-space-sm\">\n<span class=\"px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container text-outline font-bold flex items-center gap-1 w-fit\">\n<span class=\"w-1.5 h-1.5 rounded-full bg-outline\"></span> LOW\n                </span>\n</td>\n<td class=\"py-space-md px-space-md\">\n<div class=\"flex flex-col\">\n<span class=\"font-body-md text-body-md font-semibold text-on-surface\">JWT certificate rotation misalignment</span>\n<span class=\"font-body-sm text-body-sm text-on-surface-variant truncate\">Legacy node cache retained expired public JWKS payload for 3 pods.</span>\n</div>\n</td>\n<td class=\"py-space-md px-space-sm\">\n<span class=\"px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container-high text-on-surface flex items-center gap-1 w-fit\">\n<span class=\"material-symbols-outlined text-[13px] text-secondary\">security</span> auth-proxy\n                </span>\n</td>\n<td class=\"py-space-md px-space-sm\">\n<span class=\"px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-tertiary-container/30 text-tertiary font-medium flex items-center gap-1.5 w-fit\">\n<span class=\"material-symbols-outlined text-[13px]\">check_circle</span> Recovered\n                </span>\n</td>\n<td class=\"py-space-md px-space-sm font-label-code-sm text-label-code-sm text-on-surface-variant\">\n                Yesterday 04:10 UTC\n              </td>\n<td class=\"py-space-md px-space-sm font-label-code-md text-label-code-md text-on-surface-variant font-semibold\">\n                4m 02s <span class=\"text-outline font-normal\">(Manual SRE)</span>\n</td>\n<td class=\"py-space-md px-space-md\">\n<div class=\"flex items-center gap-1.5 font-label-code-sm text-label-code-sm text-on-surface bg-surface-container px-space-sm py-1 rounded\">\n<span class=\"material-symbols-outlined text-[14px] text-outline\">sync</span>\n<span class=\"\">Forced JWKS sync &amp; flushed local edge cache</span>\n</div>\n</td>\n<td class=\"py-space-md px-space-md text-right\">\n<div class=\"flex items-center justify-end gap-1\">\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-code-sm text-label-code-sm\" title=\"View AI Root Cause Analysis\">\n<span class=\"material-symbols-outlined text-[16px]\">psychology</span>\n</button>\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-tertiary font-label-code-sm text-label-code-sm\" title=\"Postmortem\">\n<span class=\"material-symbols-outlined text-[16px]\">article</span>\n</button>\n<button class=\"action-btn px-space-xs py-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-code-sm text-label-code-sm\" title=\"Telemetry Timeline\">\n<span class=\"material-symbols-outlined text-[16px]\">timeline</span>\n</button>\n</div>\n</td>\n</tr>\n</tbody>\n</table>\n</div>\n<!-- Table Footer / Pagination -->\n<div class=\"flex flex-col sm:flex-row items-center justify-between px-space-md py-space-sm bg-surface-container-low text-on-surface-variant\">\n<span class=\"font-label-code-sm text-label-code-sm mb-2 sm:mb-0\">\n          Showing 6 of 48 incidents recorded across all Kubernetes worker nodes\n        </span>\n<div class=\"flex items-center gap-1\">\n<button class=\"p-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface disabled:opacity-40\" disabled=\"\">\n<span class=\"material-symbols-outlined text-[16px]\">chevron_left</span>\n</button>\n<span class=\"font-label-code-sm text-label-code-sm px-space-sm py-1 bg-surface-container-high rounded text-on-surface font-bold\">1</span>\n<button class=\"font-label-code-sm text-label-code-sm px-space-sm py-1 hover:bg-surface-container rounded transition-colors\">2</button>\n<button class=\"font-label-code-sm text-label-code-sm px-space-sm py-1 hover:bg-surface-container rounded transition-colors\">3</button>\n<button class=\"p-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface\">\n<span class=\"material-symbols-outlined text-[16px]\">chevron_right</span>\n</button>\n</div>\n</div>\n</div>\n<!-- AI Remediation Workflow & Postmortem Visual Drawer Bento -->\n<div class=\"grid grid-cols-1 lg:grid-cols-3 gap-space-md\">\n<!-- Left: Heuristic Execution Engine -->\n<div class=\"lg:col-span-2 bg-surface-container-lowest p-space-md rounded-lg shadow-sm flex flex-col gap-space-md\">\n<div class=\"flex items-center justify-between\">\n<div class=\"flex items-center gap-space-sm\">\n<span class=\"p-1.5 rounded bg-primary-container/20 text-primary\">\n<span class=\"material-symbols-outlined text-[20px]\">precision_manufacturing</span>\n</span>\n<div>\n<h2 class=\"font-headline-md text-headline-md text-on-surface\">Live Autonomous Action Flow</h2>\n<p class=\"font-body-sm text-body-sm text-on-surface-variant\">Pipeline view of active remediation agent heuristics</p>\n</div>\n</div>\n<span class=\"font-label-code-sm text-label-code-sm px-space-sm py-1 rounded bg-tertiary-container/30 text-tertiary\">\n            Zero-Touch Mode: ENABLED\n          </span>\n</div>\n<div class=\"relative flex flex-col md:flex-row items-stretch justify-between gap-space-sm pt-2\">\n<!-- Step 1 -->\n<div class=\"flex-1 bg-surface-container-low p-space-sm rounded flex flex-col gap-1.5\">\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm text-tertiary font-bold\">01. INGEST</span>\n<span class=\"material-symbols-outlined text-[16px] text-tertiary\">check_circle</span>\n</div>\n<span class=\"font-body-sm text-body-sm font-semibold text-on-surface\">eBPF Telemetry Ingest</span>\n<p class=\"font-label-code-sm text-label-code-sm text-on-surface-variant\">Parsed 1.2M metrics/sec. Spike confirmed on pool concurrency limit.</p>\n</div>\n<!-- Step 2 -->\n<div class=\"flex-1 bg-surface-container-low p-space-sm rounded flex flex-col gap-1.5\">\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm text-tertiary font-bold\">02. ISOLATE</span>\n<span class=\"material-symbols-outlined text-[16px] text-tertiary\">check_circle</span>\n</div>\n<span class=\"font-body-sm text-body-sm font-semibold text-on-surface\">Blast Radius Containment</span>\n<p class=\"font-label-code-sm text-label-code-sm text-on-surface-variant\">Cordoned pod #04; shifted non-critical queue traffic to backup region.</p>\n</div>\n<!-- Step 3 (Active) -->\n<div class=\"flex-1 bg-surface-container-high p-space-sm rounded flex flex-col gap-1.5 relative overflow-hidden\">\n<div class=\"absolute top-0 right-0 left-0 h-0.5 bg-secondary\"></div>\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm text-secondary font-bold\">03. REMEDIATE</span>\n<span class=\"material-symbols-outlined text-[16px] text-secondary animate-spin\">rotate_right</span>\n</div>\n<span class=\"font-body-sm text-body-sm font-semibold text-on-surface\">Dynamic Scaling</span>\n<p class=\"font-label-code-sm text-label-code-sm text-secondary\">Postgres pool +150 slots. Rolling worker restart in progress (75%).</p>\n</div>\n<!-- Step 4 -->\n<div class=\"flex-1 bg-surface-container-low p-space-sm rounded flex flex-col gap-1.5 opacity-60\">\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm text-outline font-bold\">04. VERIFY</span>\n<span class=\"material-symbols-outlined text-[16px] text-outline\">pending</span>\n</div>\n<span class=\"font-body-sm text-body-sm font-semibold text-on-surface\">Synthetics Canary</span>\n<p class=\"font-label-code-sm text-label-code-sm text-on-surface-variant\">Validate latency p99 &lt; 250ms for 3 consecutive minutes.</p>\n</div>\n</div>\n<!-- Terminal mini-log stream -->\n<div class=\"bg-surface-container-lowest rounded p-space-sm font-label-code-sm text-label-code-sm text-on-surface-variant flex flex-col gap-1 max-h-28 overflow-y-auto\">\n<div class=\"flex items-center gap-2\">\n<span class=\"text-outline\">10:14:02.102</span>\n<span class=\"text-error\">[ALERT]</span>\n<span class=\"\">pg_stat_activity count &gt; 98 / max 100 for &gt; 15s</span>\n</div>\n<div class=\"flex items-center gap-2\">\n<span class=\"text-outline\">10:14:03.490</span>\n<span class=\"text-secondary\">[AUTON]</span>\n<span class=\"\">Triggered policy auto_remed_db_pool_v4 (Confidence: 0.984)</span>\n</div>\n<div class=\"flex items-center gap-2\">\n<span class=\"text-outline\">10:14:08.810</span>\n<span class=\"text-primary\">[HEUR]</span>\n<span class=\"\">Applied pgbouncer pool patch +150 conns via KubeAPI</span>\n</div>\n<div class=\"flex items-center gap-2\">\n<span class=\"text-outline\">10:14:14.220</span>\n<span class=\"text-tertiary\">[STREAM]</span>\n<span class=\"\">Active wait events decreased from 1,420 to 184 (Falling)</span>\n</div>\n</div>\n</div>\n<!-- Right: AI Root Cause Analysis Preview card -->\n<div class=\"bg-surface-container-lowest p-space-md rounded-lg shadow-sm flex flex-col justify-between\">\n<div class=\"flex flex-col gap-space-sm\">\n<div class=\"flex items-center justify-between\">\n<span class=\"font-label-code-sm text-label-code-sm text-secondary font-bold uppercase tracking-wide flex items-center gap-1\">\n<span class=\"material-symbols-outlined text-[16px]\">psychology</span> Root Cause Synthesis\n            </span>\n<span class=\"font-label-code-sm text-label-code-sm px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant\">INC-9479</span>\n</div>\n<span class=\"font-body-md text-body-md font-semibold text-on-surface\">Root Cause: Cgroup OOM Spill in JSON Parser</span>\n<p class=\"font-body-sm text-body-sm text-on-surface-variant leading-relaxed\">\n            Autonomous agent identified a payload batch of 14,000 unindexed event records delivered in a single webhook payload, exceeding the single-process 1Gi RAM allocation.\n          </p>\n<div class=\"p-space-sm rounded bg-surface-container-low flex flex-col gap-1\">\n<span class=\"font-label-code-sm text-label-code-sm text-outline uppercase font-semibold\">Remediation Blueprint:</span>\n<span class=\"font-label-code-sm text-label-code-sm text-tertiary\">• Auto-scaled task-worker limit: 2048Mi</span>\n<span class=\"font-label-code-sm text-label-code-sm text-tertiary\">• Injected upstream rate limiter on ingest proxy</span>\n</div>\n</div>\n<div class=\"pt-space-md flex items-center justify-between\">\n<button class=\"text-secondary hover:underline font-label-code-sm text-label-code-sm flex items-center gap-1\">\n<span class=\"\">Read full postmortem document</span>\n<span class=\"material-symbols-outlined text-[14px]\">arrow_forward</span>\n</button>\n<span class=\"font-label-code-sm text-label-code-sm text-outline\">Verified by Alex Vance</span>\n</div>\n</div>\n</div>\n</div>\n</div>\n<script>\n  // Simple interactive filter logic for Status and Severity\n  (function() {\n    let currentStatus = 'all';\n    let currentSev = 'all';\n\n    const rows = document.querySelectorAll('.incident-row');\n    const statusTabs = document.querySelectorAll('.status-tab');\n    const sevPills = document.querySelectorAll('.sev-pill');\n    const resetBtn = document.getElementById('reset-filters');\n    const timerElem = document.getElementById('banner-timer');\n\n    // Countdown simulation for ETA recovery\n    let eta = 35;\n    if (timerElem) {\n      setInterval(() => {\n        if (eta > 1) {\n          eta--;\n          timerElem.textContent = eta + 's';\n        } else {\n          timerElem.textContent = 'Stabilized';\n          timerElem.classList.remove('text-secondary');\n          timerElem.classList.add('text-tertiary');\n        }\n      }, 1000);\n    }\n\n    function applyFilters() {\n      rows.forEach(row => {\n        const rowStatus = row.getAttribute('data-status');\n        const rowSev = row.getAttribute('data-sev');\n\n        const matchesStatus = (currentStatus === 'all' || rowStatus === currentStatus);\n        const matchesSev = (currentSev === 'all' || rowSev === currentSev);\n\n        if (matchesStatus && matchesSev) {\n          row.style.display = '';\n        } else {\n          row.style.display = 'none';\n        }\n      });\n    }\n\n    statusTabs.forEach(tab => {\n      tab.addEventListener('click', () => {\n        statusTabs.forEach(t => {\n          t.classList.remove('bg-surface-container-high', 'text-on-surface', 'shadow-sm');\n          t.classList.add('text-on-surface-variant');\n        });\n        tab.classList.add('bg-surface-container-high', 'text-on-surface', 'shadow-sm');\n        tab.classList.remove('text-on-surface-variant');\n        currentStatus = tab.getAttribute('data-filter-status');\n        applyFilters();\n      });\n    });\n\n    sevPills.forEach(pill => {\n      pill.addEventListener('click', () => {\n        const selected = pill.getAttribute('data-filter-sev');\n        if (currentSev === selected) {\n          currentSev = 'all';\n          pill.classList.remove('ring-1', 'ring-primary');\n        } else {\n          sevPills.forEach(p => p.classList.remove('ring-1', 'ring-primary'));\n          currentSev = selected;\n          pill.classList.add('ring-1', 'ring-primary');\n        }\n        applyFilters();\n      });\n    });\n\n    if (resetBtn) {\n      resetBtn.addEventListener('click', () => {\n        currentStatus = 'all';\n        currentSev = 'all';\n        sevPills.forEach(p => p.classList.remove('ring-1', 'ring-primary'));\n        statusTabs.forEach((t, i) => {\n          if (i === 0) {\n            t.classList.add('bg-surface-container-high', 'text-on-surface', 'shadow-sm');\n            t.classList.remove('text-on-surface-variant');\n          } else {\n            t.classList.remove('bg-surface-container-high', 'text-on-surface', 'shadow-sm');\n            t.classList.add('text-on-surface-variant');\n          }\n        });\n        applyFilters();\n      });\n    }\n\n    // Chaos Drill interaction\n    const chaosBtn = document.getElementById('btn-chaos');\n    if (chaosBtn) {\n      chaosBtn.addEventListener('click', () => {\n        chaosBtn.innerHTML = '<span class=\"material-symbols-outlined text-[16px] animate-spin\">rotate_right</span> Injecting Chaos...';\n        setTimeout(() => {\n          chaosBtn.innerHTML = '<span class=\"material-symbols-outlined text-[16px] text-tertiary\">check</span> Latency Injected (120ms)';\n          setTimeout(() => {\n            chaosBtn.innerHTML = '<span class=\"material-symbols-outlined text-[16px]\">shuffle</span> Simulation / Chaos Drill';\n          }, 2400);\n        }, 1200);\n      });\n    }\n\n    // Declare incident interaction\n    const declareBtn = document.getElementById('btn-declare');\n    if (declareBtn) {\n      declareBtn.addEventListener('click', () => {\n        const name = prompt('Enter incident title or affected service:', 'Degraded throughput on worker pool');\n        if (name) {\n          alert('Incident declared and dispatched to #sre-ops-live with autonomous remediation watcher.');\n        }\n      });\n    }\n  })();\n</script>" }} />
+    <div className="relative w-full flex flex-col gap-space-lg">
+      {/* Background glow effects */}
+      <div className="absolute -top-12 -left-12 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
+      <div className="absolute top-48 right-10 w-80 h-80 bg-secondary/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+      {/* Header */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-md">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-space-sm flex-wrap">
+            <span className="px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm bg-primary/10 text-primary uppercase font-bold tracking-wider">
+              Alertmanager &amp; Incident Engine
+            </span>
+            <span className="font-label-code-sm text-label-code-sm text-on-surface-variant flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Live Cluster Telemetry
+            </span>
+            <span className="px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container text-outline flex items-center gap-1 border border-outline-variant/30">
+              <span className="material-symbols-outlined text-[13px] text-secondary">database</span> PostgreSQL Persistence
+            </span>
+          </div>
+          <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight">
+            Incident Management &amp; Triage
+          </h1>
+          <p className="font-body-md text-body-md text-on-surface-variant">
+            Real-time Alertmanager webhooks, automated deduplication, and lifecycle auditing.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-space-sm self-start lg:self-center">
+          <button
+            className="flex items-center gap-space-xs px-space-md py-1.5 rounded bg-surface-container text-on-surface hover:bg-surface-container-high transition-all shadow-sm"
+            onClick={() => { fetchStats(); fetchIncidents(); }}
+          >
+            <span className={`material-symbols-outlined text-[18px] text-secondary ${loading ? 'animate-spin' : ''}`}>refresh</span>
+            <span className="font-label-code-md text-label-code-md">Refresh Telemetry</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Stats KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-md">
+        <div className="bg-surface-container-low p-space-md rounded-lg shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="font-label-code-sm text-label-code-sm text-outline uppercase font-semibold">Total Incidents</span>
+            <span className="material-symbols-outlined text-[18px] text-primary">warning</span>
+          </div>
+          <div className="my-space-sm flex items-baseline gap-space-sm">
+            <span className="font-label-code-lg text-headline-xl font-bold text-on-surface">{stats.total || 0}</span>
+            <span className="font-label-code-sm text-label-code-sm text-on-surface-variant">recorded</span>
+          </div>
+          <div className="w-full bg-surface-container rounded-full h-1 overflow-hidden">
+            <div className="bg-primary h-full rounded-full" style={{ width: '100%' }}></div>
+          </div>
+        </div>
+
+        <div className="bg-surface-container-low p-space-md rounded-lg shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="font-label-code-sm text-label-code-sm text-error uppercase font-semibold">Active Firing</span>
+            <span className="material-symbols-outlined text-[18px] text-error animate-pulse">local_fire_department</span>
+          </div>
+          <div className="my-space-sm flex items-baseline gap-space-sm">
+            <span className="font-label-code-lg text-headline-xl font-bold text-error">
+              {stats.by_status?.firing || 0}
+            </span>
+            <span className="font-label-code-sm text-label-code-sm text-error font-medium">requires action</span>
+          </div>
+          <div className="w-full bg-surface-container rounded-full h-1 overflow-hidden">
+            <div className="bg-error h-full rounded-full" style={{ width: `${Math.min(100, ((stats.by_status?.firing || 0) / (stats.total || 1)) * 100)}%` }}></div>
+          </div>
+        </div>
+
+        <div className="bg-surface-container-low p-space-md rounded-lg shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="font-label-code-sm text-label-code-sm text-[#f59e0b] uppercase font-semibold">Acknowledged</span>
+            <span className="material-symbols-outlined text-[18px] text-[#f59e0b]">visibility</span>
+          </div>
+          <div className="my-space-sm flex items-baseline gap-space-sm">
+            <span className="font-label-code-lg text-headline-xl font-bold text-[#f59e0b]">
+              {stats.by_status?.acknowledged || 0}
+            </span>
+            <span className="font-label-code-sm text-label-code-sm text-on-surface-variant">under investigation</span>
+          </div>
+          <div className="w-full bg-surface-container rounded-full h-1 overflow-hidden">
+            <div className="bg-[#f59e0b] h-full rounded-full" style={{ width: `${Math.min(100, ((stats.by_status?.acknowledged || 0) / (stats.total || 1)) * 100)}%` }}></div>
+          </div>
+        </div>
+
+        <div className="bg-surface-container-low p-space-md rounded-lg shadow-sm flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="font-label-code-sm text-label-code-sm text-tertiary uppercase font-semibold">Resolved</span>
+            <span className="material-symbols-outlined text-[18px] text-tertiary">check_circle</span>
+          </div>
+          <div className="my-space-sm flex items-baseline gap-space-sm">
+            <span className="font-label-code-lg text-headline-xl font-bold text-tertiary">
+              {stats.by_status?.resolved || 0}
+            </span>
+            <span className="font-label-code-sm text-label-code-sm text-tertiary">stabilized</span>
+          </div>
+          <div className="w-full bg-surface-container rounded-full h-1 overflow-hidden">
+            <div className="bg-tertiary h-full rounded-full" style={{ width: `${Math.min(100, ((stats.by_status?.resolved || 0) / (stats.total || 1)) * 100)}%` }}></div>
+          </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-error-container text-error p-space-md rounded-lg shadow-sm font-body-sm flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[20px]">error</span>
+            <span>{error}</span>
+          </div>
+          <button onClick={() => setError('')}><span className="material-symbols-outlined">close</span></button>
+        </div>
+      )}
+
+      {/* Filter Strip */}
+      <div className="bg-surface-container-lowest p-space-md rounded-lg shadow-sm flex flex-col gap-space-md">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-md">
+          {/* Status Tabs */}
+          <div className="flex flex-wrap items-center gap-1 bg-surface-container-low p-1 rounded">
+            {[
+              { id: 'all', label: 'All Incidents', count: stats.total || 0 },
+              { id: 'firing', label: 'Firing', count: stats.by_status?.firing || 0, color: 'text-error', dot: 'bg-error' },
+              { id: 'acknowledged', label: 'Acknowledged', count: stats.by_status?.acknowledged || 0, color: 'text-[#f59e0b]', dot: 'bg-[#f59e0b]' },
+              { id: 'resolved', label: 'Resolved', count: stats.by_status?.resolved || 0, color: 'text-tertiary', dot: 'bg-tertiary' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => { setStatusFilter(tab.id); setPage(1); }}
+                className={`px-space-md py-1 rounded font-label-code-sm text-label-code-sm transition-all flex items-center gap-1.5 ${
+                  statusFilter === tab.id
+                    ? 'bg-surface-container-high text-on-surface font-semibold shadow-sm'
+                    : 'text-on-surface-variant hover:text-on-surface'
+                }`}
+              >
+                {tab.dot && <span className={`w-1.5 h-1.5 rounded-full ${tab.dot}`}></span>}
+                <span>{tab.label}</span>
+                <span className="ml-1 opacity-75 font-mono text-[11px]">({tab.count})</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Severity & Search */}
+          <div className="flex flex-wrap items-center gap-space-sm w-full lg:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <span className="material-symbols-outlined absolute left-2.5 top-2 text-[18px] text-outline">search</span>
+              <input
+                className="w-full h-8 pl-8 pr-3 bg-surface-container-low text-on-surface placeholder:text-outline font-label-code-sm text-label-code-sm rounded focus:outline-none focus:ring-1 focus:ring-secondary transition-all"
+                placeholder="Search alerts or summary..."
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+              />
+            </div>
+
+            <div className="flex items-center gap-1">
+              <span className="font-label-code-sm text-label-code-sm text-outline mr-1 uppercase">Severity:</span>
+              {['all', 'critical', 'warning', 'info'].map(sev => (
+                <button
+                  key={sev}
+                  onClick={() => { setSeverityFilter(sev); setPage(1); }}
+                  className={`px-2 py-0.5 rounded font-label-code-sm text-label-code-sm capitalize transition-all ${
+                    severityFilter === sev
+                      ? 'bg-primary-container text-on-primary font-bold shadow-sm'
+                      : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'
+                  }`}
+                >
+                  {sev}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Incidents Table */}
+      <div className="bg-surface-container-lowest rounded-lg shadow-md overflow-hidden flex flex-col">
+        {loading ? (
+          <div className="flex flex-col justify-center items-center h-56 gap-2">
+            <span className="material-symbols-outlined text-[36px] text-primary animate-spin">sync</span>
+            <span className="font-label-code-sm text-label-code-sm text-on-surface-variant">Loading real incident telemetry...</span>
+          </div>
+        ) : incidents.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-16 text-on-surface-variant text-center gap-2">
+            <span className="material-symbols-outlined text-[52px] text-outline">verified_user</span>
+            <p className="font-headline-sm font-semibold text-on-surface">No incidents found</p>
+            <p className="font-body-sm text-outline max-w-md">
+              {statusFilter !== 'all' || severityFilter !== 'all' || search
+                ? 'No incidents match your current filters. Try resetting search or severity parameters.'
+                : 'All Kubernetes clusters and backend services are operational with zero active firing alerts.'}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-body-sm font-body-sm text-on-surface min-w-[1150px]">
+              <thead className="bg-surface-container-low font-label-code-sm text-label-code-sm text-outline uppercase tracking-wider">
+                <tr>
+                  <th className="py-2.5 px-space-md" scope="col">Incident ID</th>
+                  <th className="py-2.5 px-space-sm" scope="col">Severity</th>
+                  <th className="py-2.5 px-space-md w-72" scope="col">Alert &amp; Summary</th>
+                  <th className="py-2.5 px-space-sm" scope="col">Component</th>
+                  <th className="py-2.5 px-space-sm" scope="col">Status</th>
+                  <th className="py-2.5 px-space-sm" scope="col">First Seen</th>
+                  <th className="py-2.5 px-space-sm" scope="col">Last Seen</th>
+                  <th className="py-2.5 px-space-md text-right" scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/10">
+                {incidents.map(inc => {
+                  const isFiring = inc.status === 'firing';
+                  const isAck = inc.status === 'acknowledged';
+                  const isResolved = inc.status === 'resolved';
+
+                  const component = inc.labels?.component || inc.labels?.job || inc.labels?.pod || 'healops';
+
+                  return (
+                    <tr
+                      key={inc.id}
+                      className={`hover:bg-surface-container/60 transition-colors ${
+                        isFiring ? 'bg-error-container/5' : isAck ? 'bg-[#f59e0b]/5' : ''
+                      }`}
+                    >
+                      <td className="py-space-md px-space-md font-label-code-md text-label-code-md text-primary font-bold">
+                        #INC-{inc.id}
+                      </td>
+                      <td className="py-space-md px-space-sm">
+                        <span className={`px-space-xs py-0.5 rounded font-label-code-sm text-label-code-sm font-bold flex items-center gap-1 w-fit uppercase ${
+                          inc.severity === 'critical' ? 'bg-error-container text-on-error-container' :
+                          inc.severity === 'warning' ? 'bg-[#f59e0b]/20 text-[#f59e0b]' :
+                          'bg-surface-container text-outline'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            inc.severity === 'critical' ? 'bg-error animate-ping' :
+                            inc.severity === 'warning' ? 'bg-[#f59e0b]' : 'bg-outline'
+                          }`}></span>
+                          {inc.severity}
+                        </span>
+                      </td>
+                      <td className="py-space-md px-space-md">
+                        <div className="flex flex-col">
+                          <span className="font-body-md text-body-md font-semibold text-on-surface">
+                            {inc.alertname}
+                          </span>
+                          <span className="font-body-sm text-body-sm text-on-surface-variant truncate max-w-md">
+                            {inc.summary || inc.description || 'No description supplied'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-space-md px-space-sm">
+                        <span className="px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm bg-surface-container-high text-on-surface flex items-center gap-1 w-fit">
+                          <span className="material-symbols-outlined text-[13px] text-secondary">dns</span>
+                          {component}
+                        </span>
+                      </td>
+                      <td className="py-space-md px-space-sm">
+                        <span className={`px-space-sm py-0.5 rounded font-label-code-sm text-label-code-sm font-semibold flex items-center gap-1.5 w-fit capitalize ${
+                          isFiring ? 'bg-error-container/30 text-error' :
+                          isAck ? 'bg-[#f59e0b]/20 text-[#f59e0b]' :
+                          'bg-tertiary-container/30 text-tertiary'
+                        }`}>
+                          {isFiring && <span className="material-symbols-outlined text-[13px] animate-spin">autorenew</span>}
+                          {isAck && <span className="material-symbols-outlined text-[13px]">visibility</span>}
+                          {isResolved && <span className="material-symbols-outlined text-[13px]">check_circle</span>}
+                          {inc.status}
+                        </span>
+                      </td>
+                      <td className="py-space-md px-space-sm font-label-code-sm text-label-code-sm text-on-surface-variant">
+                        <div>{formatDateTime(inc.first_seen_at)}</div>
+                        <div className="text-outline text-[11px]">{formatRelativeTime(inc.first_seen_at)}</div>
+                      </td>
+                      <td className="py-space-md px-space-sm font-label-code-sm text-label-code-sm text-on-surface-variant">
+                        <div>{formatDateTime(inc.last_seen_at)}</div>
+                        <div className="text-outline text-[11px]">{formatRelativeTime(inc.last_seen_at)}</div>
+                      </td>
+                      <td className="py-space-md px-space-md text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {isFiring && (
+                            <button
+                              className="px-2 py-1 rounded bg-[#f59e0b]/10 hover:bg-[#f59e0b]/20 text-[#f59e0b] font-label-code-sm text-label-code-sm flex items-center gap-1 transition-all"
+                              title="Acknowledge Incident"
+                              onClick={() => handleUpdateStatus(inc.id, 'acknowledged')}
+                              disabled={actionInProgress}
+                            >
+                              <span className="material-symbols-outlined text-[14px]">done</span>
+                              <span>Ack</span>
+                            </button>
+                          )}
+                          {!isResolved && (
+                            <button
+                              className="px-2 py-1 rounded bg-tertiary-container/20 hover:bg-tertiary-container/40 text-tertiary font-label-code-sm text-label-code-sm flex items-center gap-1 transition-all"
+                              title="Resolve Incident"
+                              onClick={() => handleUpdateStatus(inc.id, 'resolved')}
+                              disabled={actionInProgress}
+                            >
+                              <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                              <span>Resolve</span>
+                            </button>
+                          )}
+                          <button
+                            className="p-1 hover:bg-surface-container rounded text-primary hover:text-primary-container transition-colors"
+                            title="Inspect Details &amp; Timeline"
+                            onClick={() => openDetailsModal(inc.id)}
+                          >
+                            <span className="material-symbols-outlined text-[18px]">timeline</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Pagination Footer */}
+        {pagination.totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between px-space-md py-space-sm bg-surface-container-low text-on-surface-variant">
+            <span className="font-label-code-sm text-label-code-sm mb-2 sm:mb-0">
+              Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total incidents)
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                className="p-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface disabled:opacity-40"
+                disabled={page <= 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+              >
+                <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+              </button>
+              <span className="font-label-code-sm text-label-code-sm px-space-sm py-1 bg-surface-container-high rounded text-on-surface font-bold">
+                {page}
+              </span>
+              <button
+                className="p-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface disabled:opacity-40"
+                disabled={page >= pagination.totalPages}
+                onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+              >
+                <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Incident Details & Timeline Modal */}
+      {(selectedIncident || loadingDetail) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-surface-container-low border border-outline-variant/30 shadow-2xl rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col relative overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-space-lg border-b border-outline-variant/20 flex items-start justify-between bg-surface-container-lowest">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-label-code-lg text-label-code-lg text-primary font-bold">
+                    #INC-{selectedIncident?.id}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded font-label-code-sm text-label-code-sm font-bold uppercase ${
+                    selectedIncident?.severity === 'critical' ? 'bg-error-container text-on-error-container' :
+                    selectedIncident?.severity === 'warning' ? 'bg-[#f59e0b]/20 text-[#f59e0b]' :
+                    'bg-surface-container text-outline'
+                  }`}>
+                    {selectedIncident?.severity}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded font-label-code-sm text-label-code-sm font-semibold capitalize ${
+                    selectedIncident?.status === 'firing' ? 'bg-error-container/30 text-error' :
+                    selectedIncident?.status === 'acknowledged' ? 'bg-[#f59e0b]/20 text-[#f59e0b]' :
+                    'bg-tertiary-container/30 text-tertiary'
+                  }`}>
+                    {selectedIncident?.status}
+                  </span>
+                </div>
+                <h2 className="font-headline-md text-headline-md text-on-surface mt-1">
+                  {selectedIncident?.alertname}
+                </h2>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">
+                  {selectedIncident?.summary}
+                </p>
+              </div>
+
+              <button
+                className="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-container transition-colors"
+                onClick={() => setSelectedIncident(null)}
+              >
+                <span className="material-symbols-outlined text-[22px]">close</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            {loadingDetail ? (
+              <div className="flex justify-center items-center h-64">
+                <span className="material-symbols-outlined text-[32px] text-primary animate-spin">sync</span>
+              </div>
+            ) : (
+              <div className="p-space-lg overflow-y-auto flex flex-col gap-space-lg">
+                {/* Metadata Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-space-sm bg-surface-container-lowest p-space-md rounded-lg">
+                  <div>
+                    <span className="font-label-code-sm text-label-code-sm text-outline uppercase">Fingerprint</span>
+                    <p className="font-label-code-sm text-label-code-sm text-on-surface font-mono truncate" title={selectedIncident?.fingerprint}>
+                      {selectedIncident?.fingerprint}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-label-code-sm text-label-code-sm text-outline uppercase">First Occurrence</span>
+                    <p className="font-label-code-sm text-label-code-sm text-on-surface">
+                      {formatDateTime(selectedIncident?.first_seen_at)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="font-label-code-sm text-label-code-sm text-outline uppercase">Last Occurrence</span>
+                    <p className="font-label-code-sm text-label-code-sm text-on-surface">
+                      {formatDateTime(selectedIncident?.last_seen_at)}
+                    </p>
+                  </div>
+                  {selectedIncident?.resolved_at && (
+                    <div>
+                      <span className="font-label-code-sm text-label-code-sm text-tertiary uppercase">Resolved At</span>
+                      <p className="font-label-code-sm text-label-code-sm text-tertiary font-semibold">
+                        {formatDateTime(selectedIncident?.resolved_at)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Labels Chips */}
+                {selectedIncident?.labels && Object.keys(selectedIncident.labels).length > 0 && (
+                  <div className="flex flex-col gap-1.5">
+                    <span className="font-label-code-sm text-label-code-sm text-outline uppercase font-semibold">
+                      Prometheus Alert Labels
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(selectedIncident.labels).map(([k, v]) => (
+                        <span key={k} className="px-2 py-0.5 rounded bg-surface-container-high text-on-surface font-label-code-sm text-[12px] flex items-center gap-1">
+                          <span className="text-secondary font-semibold">{k}:</span>
+                          <span>{String(v)}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Timeline / History */}
+                <div className="flex flex-col gap-space-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="font-label-code-sm text-label-code-sm text-outline uppercase font-semibold flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[16px] text-primary">history</span>
+                      Incident Audit &amp; Event Timeline
+                    </span>
+                    <span className="font-label-code-sm text-label-code-sm text-on-surface-variant">
+                      {timeline.length} event(s) recorded
+                    </span>
+                  </div>
+
+                  <div className="relative border-l-2 border-outline-variant/30 ml-3 pl-4 flex flex-col gap-space-md py-1">
+                    {timeline.map((evt, idx) => {
+                      const isFiringEvt = evt.event_type === 'firing';
+                      const isAckEvt = evt.event_type === 'acknowledged';
+                      const isResEvt = evt.event_type === 'resolved';
+                      const isReopenedEvt = evt.event_type === 'reopened';
+
+                      return (
+                        <div key={evt.id || idx} className="relative flex flex-col gap-1">
+                          {/* Dot marker on timeline */}
+                          <div className={`absolute -left-[23px] top-1 w-3 h-3 rounded-full border-2 border-surface-container-low ${
+                            isFiringEvt ? 'bg-error' :
+                            isAckEvt ? 'bg-[#f59e0b]' :
+                            isResEvt ? 'bg-tertiary' :
+                            isReopenedEvt ? 'bg-secondary' : 'bg-primary'
+                          }`}></div>
+
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-label-code-sm text-label-code-sm font-bold text-on-surface capitalize flex items-center gap-1.5">
+                              {evt.event_type}
+                            </span>
+                            <span className="font-label-code-sm text-label-code-sm text-outline">
+                              {formatDateTime(evt.created_at)}
+                            </span>
+                          </div>
+
+                          <p className="font-body-sm text-body-sm text-on-surface-variant">
+                            {evt.summary}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Actions Footer */}
+            {selectedIncident && (
+              <div className="p-space-md border-t border-outline-variant/20 bg-surface-container-lowest flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {selectedIncident.status === 'firing' && (
+                    <button
+                      className="px-space-md py-1.5 rounded bg-[#f59e0b] hover:bg-[#f59e0b]/90 text-black font-label-code-md text-label-code-md font-semibold flex items-center gap-1 transition-all"
+                      onClick={() => handleUpdateStatus(selectedIncident.id, 'acknowledged')}
+                      disabled={actionInProgress}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">visibility</span>
+                      <span>Acknowledge Incident</span>
+                    </button>
+                  )}
+                  {selectedIncident.status !== 'resolved' && (
+                    <button
+                      className="px-space-md py-1.5 rounded bg-tertiary hover:bg-tertiary/90 text-black font-label-code-md text-label-code-md font-semibold flex items-center gap-1 transition-all"
+                      onClick={() => handleUpdateStatus(selectedIncident.id, 'resolved')}
+                      disabled={actionInProgress}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                      <span>Mark Resolved</span>
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  className="px-space-md py-1.5 rounded bg-surface-container text-on-surface hover:bg-surface-container-high font-label-code-sm text-label-code-sm"
+                  onClick={() => setSelectedIncident(null)}
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
