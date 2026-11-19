@@ -103,24 +103,45 @@ flowchart TD
 
 ## 7. Application Visual Walkthrough
 
-### Core Pages & Navigation
+### 7.1 Executive Reliability Dashboard
+![HealOps Dashboard](docs/screenshots/dashboard.png)
+*Unified operations center displaying real-time system status, MTTR/MTBF metrics, active tasks, and recent incident logs.*
 
-| View | Screenshot | Description |
-| :--- | :--- | :--- |
-| **Executive Dashboard** | ![Dashboard](docs/screenshots/dashboard.png) | Unified operations center displaying system status, MTTR/MTBF metrics, active tasks, and recent incident logs. |
-| **Incidents Console** | ![Incidents](docs/screenshots/incidents.png) | Incident management interface with severity filtering, Alertmanager fingerprint tracking, and diagnostic launchers. |
-| **AI Root Cause Diagnostics** | ![AI Analysis](docs/screenshots/ai-analysis.png) | In-depth diagnostic view correlating Prometheus signals, cgroup working sets, confidence scores, and corrective steps. |
-| **System Diagnostics** | ![System Health](docs/screenshots/system-health.png) | Live cluster and service diagnostics showing environment detection, database pool metrics, and Prometheus connectivity. |
-| **Task Management** | ![Tasks](docs/screenshots/tasks.png) | Reliability operations task board with status filtering, priorities, and PostgreSQL persistence. |
-| **Settings & Versioning** | ![Settings](docs/screenshots/settings.png) | Runtime configuration panel displaying dynamic Git commit SHA, environment mode, and telemetry settings. |
+### 7.2 Incident Management Console
+![Incident Management](docs/screenshots/incidents.png)
+*Centralized incident console with severity filtering, Alertmanager fingerprint tracking, and diagnostic launchers.*
 
-### End-to-End Remediation Demonstration
+### 7.3 AI-Assisted Root Cause Diagnostics
+![AI Analysis](docs/screenshots/ai-analysis.png)
+*Deep-dive diagnostic view correlating Prometheus signals, cgroup working sets, confidence scores, and prioritized corrective actions.*
 
-| Step | Screenshot | Description |
-| :--- | :--- | :--- |
-| **Human Approval Modal** | ![Remediation Approval](docs/screenshots/remediation-approval.png) | Mandatory safety gate requiring operator checkbox authorization before any Kubernetes rollout action executes. |
-| **Remediation & Recovery Audit** | ![Remediation Success](docs/screenshots/remediation-success.png) | Completed audit log recording execution ID, operator username, rollout duration, and `/ready` probe validation. |
-| **Infrastructure Monitoring** | ![Monitoring](docs/screenshots/monitoring.png) | Live Grafana dashboard tracking pod CPU, memory working sets, cgroup throttling, and restart spikes across workloads. |
+### 7.4 System Health & Cluster Diagnostics
+![System Health](docs/screenshots/system-health.png)
+*Live cluster diagnostics verifying dual-mode environment detection, database connection pool metrics, and Prometheus reachability.*
+
+### 7.5 Reliability Task Management
+![Tasks](docs/screenshots/tasks.png)
+*Operator task board with priority tagging, status filtering, and PostgreSQL persistence.*
+
+### 7.6 CI/CD Test Results Verification
+![Test Results](docs/screenshots/test-results.png)
+*Continuous integration test reporting suite tracking Jest unit tests, Newman API contracts, and Playwright E2E browser runs.*
+
+### 7.7 Runtime Settings & Environment Configuration
+![Settings](docs/screenshots/settings.png)
+*Cluster configuration panel displaying dynamic Git commit SHA, environment mode, and telemetry flags.*
+
+### 7.8 Human Approval Remediation Modal
+![Remediation Approval](docs/screenshots/remediation-approval.png)
+*Mandatory operator safety gate requiring explicit checkbox authorization and RBAC verification before rolling restarts.*
+
+### 7.9 Remediation Execution & Recovery Verification
+![Successful Remediation](docs/screenshots/remediation-success.png)
+*Persistent audit log confirming execution duration, operator identity, ReplicaSet progression, and /ready probe verification.*
+
+### 7.10 Infrastructure Observability & Metrics (Grafana)
+![Infrastructure Monitoring](docs/screenshots/monitoring.png)
+*Dedicated Grafana dashboard monitoring pod CPU quotas, cgroup memory working sets, CFS throttling, and container restart counts.*
 
 ---
 
@@ -335,19 +356,19 @@ HealOps/
    # Create Secrets from example templates
    kubectl create secret generic postgres-secret -n healops \
      --from-literal=POSTGRES_USER=healops \
-     --from-literal=POSTGRES_PASSWORD=healops_pass \
+     --from-literal=POSTGRES_PASSWORD=<YOUR_STRONG_DATABASE_PASSWORD> \
      --from-literal=POSTGRES_DB=healops
 
    kubectl create secret generic backend-secret -n healops \
-     --from-literal=JWT_SECRET=super_secret_jwt_key \
-     --from-literal=DATABASE_URL=postgres://healops:healops_pass@healops-postgres:5432/healops
+     --from-literal=JWT_SECRET=<YOUR_RANDOM_JWT_SECRET> \
+     --from-literal=DATABASE_URL=postgres://healops:<YOUR_STRONG_DATABASE_PASSWORD>@healops-postgres:5432/healops
 
    kubectl create secret generic alertmanager-secret -n healops \
-     --from-literal=webhook-token=HealOps_Alertmanager_Token_Secured_2026_x87b
+     --from-literal=webhook-token=<YOUR_RANDOM_WEBHOOK_TOKEN>
 
    kubectl create secret generic grafana-secret -n healops \
      --from-literal=admin-user=healops_admin \
-     --from-literal=admin-password=healops_grafana_pass
+     --from-literal=admin-password=<YOUR_GRAFANA_PASSWORD>
    ```
 
 2. **Deploy Storage & Database:**
@@ -396,7 +417,7 @@ To access cluster services locally:
 | :--- | :--- | :--- | :--- |
 | **HealOps Frontend** | `kubectl port-forward svc/healops-frontend 8090:80 -n healops` | [http://localhost:8090](http://localhost:8090) | Create workspace on first login |
 | **HealOps Backend** | `kubectl port-forward svc/healops-backend 5000:5000 -n healops` | [http://localhost:5000](http://localhost:5000) | Bearer Token / JWT |
-| **Grafana** | `kubectl port-forward svc/healops-grafana 3000:3000 -n healops` | [http://localhost:3000](http://localhost:3000) | `healops_admin` / *(secret)* |
+| **Grafana** | `kubectl port-forward svc/healops-grafana 3000:3000 -n healops` | [http://localhost:3000](http://localhost:3000) | `healops_admin` / `<YOUR_GRAFANA_PASSWORD>` |
 | **Prometheus** | `kubectl port-forward svc/healops-prometheus 9090:9090 -n healops` | [http://localhost:9090](http://localhost:9090) | No auth |
 | **Alertmanager** | `kubectl port-forward svc/healops-alertmanager 9093:9093 -n healops` | [http://localhost:9093](http://localhost:9093) | No auth |
 
@@ -408,7 +429,7 @@ To access cluster services locally:
 | Variable | Description | Default |
 | :--- | :--- | :--- |
 | `PORT` | HTTP server port | `5000` |
-| `DATABASE_URL` | PostgreSQL connection URL | `postgres://healops:healops_pass@postgres:5432/healops` |
+| `DATABASE_URL` | PostgreSQL connection URL | `postgres://healops:<YOUR_STRONG_DATABASE_PASSWORD>@postgres:5432/healops` |
 | `JWT_SECRET` | Secret key for signing operator JWTs | *Required in production* |
 | `ALERTMANAGER_WEBHOOK_TOKEN` | Bearer token for Alertmanager webhook authentication | *Required in production* |
 | `PROMETHEUS_URL` | Internal URL for querying Prometheus API | `http://healops-prometheus.healops.svc.cluster.local:9090` |
