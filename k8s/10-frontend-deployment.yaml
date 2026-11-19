@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: healops-frontend:v3
+          image: healops-frontend:v4
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
